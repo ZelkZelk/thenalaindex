@@ -1,4 +1,5 @@
 app/Config
 app/Config/*
 app/tmp
-appt/tmp/*
+app/tmp/*
+nbproject
