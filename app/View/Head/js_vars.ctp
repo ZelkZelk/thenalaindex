@@ -1,0 +1,1 @@
+<script type="text/javascript">var <?=$name?> = <?=$json?>;</script>

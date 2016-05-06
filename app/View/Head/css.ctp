@@ -1,0 +1,1 @@
+<link href="<?=$path?>" <?=$this->Head->getParams($params)?>/>

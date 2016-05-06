@@ -1,0 +1,1 @@
+<script src="<?=$path?>" <?=$this->Head->getParams($params)?>></script>

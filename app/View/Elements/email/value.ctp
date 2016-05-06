@@ -1,0 +1,1 @@
+<td align='right'><span><?= $value ?></span></td>
