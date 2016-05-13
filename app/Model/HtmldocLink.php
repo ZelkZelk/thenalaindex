@@ -78,4 +78,48 @@ class HtmldocLink extends AppModel {
         $this->loadArray($data);
         return $this->store();
     }
+    
+    /* Carga el modelo basado en el MetaDataFile */
+    
+    public function loadFromMeta(MetaDataFile $MetaData){
+        $cnd = [];
+        $cnd['HtmldocLink.meta_data_file_id'] = $MetaData->id;
+        $response = false;
+        
+        $data = $this->find('first',[
+            'conditions' => $cnd
+        ]);
+        
+        if($data){
+            $alias = $this->alias;
+            $blob = $data[$alias];
+            $this->loadArray($blob);
+            $response = true;
+        }
+        
+        return $response;
+    }
+    
+    /* Actualiza los hashes del registro actual */
+    
+    public function updateHashes(array $hashes = []){
+        $this->setHashes($hashes);        
+        return $this->store();
+    }
+    
+    /* Setea la lista de hashes desde un array simple */
+    
+    protected function setHashes(array $hashes = []){        
+        if(empty($hashes)){
+            $rawHashes = '{}';
+        }
+        else{            
+            $csvHashes = implode(',', $hashes);  
+            $fixHashes = preg_replace('/{|}/','',$csvHashes);   
+            $trueCsvHashes = preg_replace('/^,/','',$fixHashes);   
+            $rawHashes = '{' . $trueCsvHashes . '}';
+        }
+        
+        $this->Data()->write('hashes',$rawHashes);
+    }
 }

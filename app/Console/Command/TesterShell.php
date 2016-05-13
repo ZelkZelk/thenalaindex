@@ -121,9 +121,31 @@ class TesterShell extends AppShell {
         
         passthru("xdg-open {$this->route} 1> /dev/null 2> /dev/null &");
     }
+    
+    public function dumpdatahash(){
+        $Meta = new MetaDataFile();
+        $hash = '1238470639145190408';
+        
+        if($Meta->loadHash($hash)){        
+            $Reader = new DataFile();
+            $id = $Meta->id;
+            
+            if($Reader->loadFromMeta($id)){
+                $file = $Reader->getFile();
+                echo $file;            
+            }
+            else{
+                echo "DataFile for {$id} NOT FOUND\N";
+            }
+        }
+        else{            
+            echo "MetaDataFile for {$hash} NOT FOUND\N";
+        }
+    }
+    
     public function dumpdatafile(){
         $Reader = new DataFile();
-        $Reader->loadFromId(1);
+        $Reader->loadFromId(85);
         $file = $Reader->getFile();
         
         echo $file;
@@ -151,7 +173,7 @@ class TesterShell extends AppShell {
             echo "$message\n";
         });            
 
-        $filename = '/tmp/test.html';
+        $filename = '/var/www/html/nalatarget/v2/v2.1/test.php';
         $file = file_get_contents($filename);
         $this->Scrapper->scrapUrls($file);
         $links = $this->Scrapper->getLinks();
@@ -255,11 +277,12 @@ class TesterShell extends AppShell {
 //        $this->testNormalizer('http://www.una.py/index.php/unidades-academicas/biblioteca-central');
 //        $this->testNormalizer('/?q=node/1&page=3');
 //        $this->testNormalizer('http://www.pol.una.py/?q=horario_clases');
-        $this->testNormalizer('http://twitter.com:9000#test?kek=1');
+        $this->testNormalizer('../../css/style.css','http://www.test.com/v2/v2.1/');
+//        $this->testNormalizer('/../../css/style.css','http://www.test.com/');
     }
     
-    private function testNormalizer($url){   
-        $this->Normalizer->normalize($url);
+    private function testNormalizer($url,$referer = null){   
+        $this->Normalizer->normalize($url,$referer);
         
         if($this->Normalizer->isAllowed()){            
             echo "URL<$url> ALLOWED\n";
@@ -279,6 +302,7 @@ class TesterShell extends AppShell {
             echo "$message\n";
         });
         
-        $this->LinkAnalyzerComponent->scanner(1);
+        $file = file_get_contents('/tmp/nalatest.html');
+        $this->LinkAnalyzerComponent->test($file);
     }
 }

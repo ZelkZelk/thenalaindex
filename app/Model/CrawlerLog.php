@@ -130,6 +130,12 @@ class CrawlerLog extends AppModel {
             }
         }
         
+        $array['http_petitions'] = 0;
+        $array['http_errors'] = 0;
+        $array['html_crawled'] = 0;
+        $array['js_crawled'] = 0;
+        $array['css_crawled'] = 0;
+        $array['img_crawled'] = 0;
         $array['target_id'] = $target->id;
         $array['starting'] = date('Y-m-d H:i:s');
         $this->loadArray($array);
@@ -198,5 +204,14 @@ class CrawlerLog extends AppModel {
     
     public function deleteTempTrace($file){
         return unlink($file);
+    }
+    
+    /* Aumenta el contador del campo indicado */
+    
+    public function increment($field){
+        $value = (int) $this->Data()->read($field);
+        $value += 1;
+        
+        $this->Data()->write($field,$value);
     }
 }

@@ -21,6 +21,20 @@ App::import('Model', 'Target');
 
 class LinkAnalyzerComponent extends CrawlerUtilityComponent{
     
+    /* Listado de Hashes unicos encontrados */
+    
+    private $Hashes = [];
+    
+    public function getHashes(){
+        return $this->Hashes;
+    }
+    
+    public function addHash($hash){
+        if(in_array($hash, $this->Hashes) === false){
+            $this->Hashes[] = $hash;
+        }
+    }
+    
     /* Modelos a Utilizar. */
     
     private $MetaDataFile;
@@ -163,29 +177,80 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
     /* Scrapea todas las URLs del documento HTML, */
     
     private function urlScan(){
-        if($this->MetaDataFile->isHtml()){
-            $this->loadDataFile();
-        }
-    }
-    
-    /* Caraga el archivo HTML en memoria */
-    
-    private function loadDataFile(){
         $id = $this->MetaDataFile->id;
         
-        if($this->DataFile->loadFromMeta($id)){
-            $file = $this->DataFile->getFile();
-            $this->Scrapper->scrapUrls($file);
+        if($this->MetaDataFile->isHtml()){
+            if($this->loadDataFile() === false){
+                $this->logAnalyzer("DATAFILE<$id,NOT FOUND>");
+                return false;
+            }
+            
             $this->replaceLinks();
             $this->replaceStylesheets();
             $this->replaceScripts();
             $this->replaceImages();
             $this->updateFile();
+
+            if($this->HtmldocLink->loadFromMeta($this->MetaDataFile) === false){
+                $this->logAnalyzer("HTMLDOCLINK<$id,NOT FOUND>");
+                return false;
+            }
+            else{
+                $hashes = $this->getHashes();
+                $this->HtmldocLink->updateHashes($hashes);
+            }
+            
+            $this->Scrapper->clear();
+            $this->flushHashes();
         }
-        else{            
-            $this->logAnalyzer("DATAFILE<$id,NOT FOUND>");
-        }
+        
+        return true;
     }
+    
+    /* Se borran los hashes */
+    
+    public function flushHashes(){
+        $this->Hashes = [];
+    }
+    
+    /* Carga el archivo HTML en memoria */
+    
+    private function loadDataFile(){
+        $id = $this->MetaDataFile->id;
+        $response = true;
+        
+        if($this->loadReferer() === false){
+            return false;
+        }
+        
+        if($this->DataFile->loadFromMeta($id) === false){
+            return false;
+        }
+        
+        $file = $this->DataFile->getFile();
+        $this->Scrapper->scrapUrls($file);
+        return $response;
+    }
+    
+    /* Carga el referer en memoria */
+    
+    private $Referer = null;
+    
+    private function loadReferer(){
+        if(is_null($this->Referer)){
+            $this->Referer = new Url();
+        }
+        
+        $urlId = $this->MetaDataFile->Data()->read('url_id');
+        $response = true;
+        
+        if($this->Referer->loadFromId($urlId) === false){
+            return false;
+        }
+        
+        return $response;
+    }
+        
     
     /* Actualiza el documento HTML con los reemplazos de URL crawleadas para ser
      * servidas via cdn.
@@ -220,15 +285,22 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 continue;
             }
             
-            $this->replaceUrl($node,$replace_url,$url);
-            $node->setAttribute('data-nalaid',$hash);
-            $node->setAttribute('data-nalasource',$url);
+            $this->replaceUrl($node,$replace_url,$url,$hash);
+            $this->addHash($hash);
+            
+            if($node->tagName !== 'style'){
+                $node->setAttribute(self::$DATA_NALA_ID,$hash);
+                $node->setAttribute(self::$DATA_NALA_SOURCE,$url);
+            }
         }
     }
     
+    public static $DATA_NALA_SOURCE = 'data-nalasource';
+    public static $DATA_NALA_ID = 'data-nalaid';
+    
     /* Reemplaza la url del nodo dependiendo del TAG */
     
-    private function replaceUrl($node,$replace_url,$raw_url){
+    private function replaceUrl($node,$replace_url,$raw_url,$hash){
         switch($node->tagName){
             case 'a':
                 $this->replaceATag($node,$replace_url);
@@ -237,7 +309,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $this->replaceLinkTag($node,$replace_url);
                 break;
             case 'style':
-                $this->replaceStyleInclude($node,$replace_url,$raw_url);
+                $this->replaceStyleInclude($node,$replace_url,$raw_url,$hash);
                 break;
             case 'script':
                 $this->replaceScriptTag($node,$replace_url);
@@ -262,15 +334,43 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
     
     /* Reemplaza las inclusion CSS de Stylesheets */
     
-    private static $STYLE_INCLUDE_REGEX = '/\@import\s+url\(\"(%s)\"\)\;*/';
+    private static $STYLE_INCLUDE_REGEX = '/\@import\s+url\((\"|\')(%s)(\"|\')\)\;*/';
     
-    private function replaceStyleInclude($node,$url,$raw_url){        
-        $regex = sprintf(self::$STYLE_INCLUDE_REGEX,  preg_quote($raw_url,'/'));
+    private function replaceStyleInclude($node,$url,$raw_url,$hash){
+        $id = self::$DATA_NALA_ID;
+        $source = self::$DATA_NALA_SOURCE;  
+        
+        if($this->hasNalaUrl($raw_url)){
+            list($replace_url,$raw_url) = $this->nalaFragments($raw_url);
+        }
+        else{
+            $replace_url = $raw_url;
+        }
+                       
+        $regex = sprintf(self::$STYLE_INCLUDE_REGEX,  preg_quote($replace_url,'/'));
+        $replacement = "@import url(\"{$url}\"); /* {$source}={$raw_url} {$id}={$hash} */"; 
+        
         $text = $node->textContent;
-        $replacement = "@import url(\"{$url}\");";
         $replaceText = preg_replace($regex, $replacement, $text);
-        $node->textContent = $replaceText;
-        $node->setAttribute('href',$url);
+        $node->nodeValue = $replaceText;
+    }
+    
+    /* Divide el nala protocol en CDN y RAW URLs */
+    
+    private function nalaFragments($protocol){
+        return explode(ScrapperComponent::$URL_SEPARATOR, $protocol);
+    }
+    
+    /* Determina si la URL es del CDN de Nala o es la Original*/
+    
+    private function hasNalaUrl($url){
+        $response = false;
+        
+        if(strstr($url, ScrapperComponent::$URL_SEPARATOR)){
+            $response = true;
+        }
+        
+        return $response;
     }
     
     /* Reemplaza el attributo HREF del elemente <LINK> con la URL especificada */
@@ -306,9 +406,21 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
     /* Obtiene el hash de la URL */
     
     private function getUrlHash($url){
-        $id = $this->CrawlerLog->id;
+        $finalUrl = $url;
         
-        $this->Normalizer->normalize($url);
+        if($this->Test){
+            return $this->getTestUrlHash();
+        }
+        
+        if($this->hasNalaUrl($finalUrl)){
+            $fragments = $this->nalaFragments($finalUrl);
+            $finalUrl = $fragments[1];
+        }
+        
+        $id = $this->CrawlerLog->id;
+        $referer = $this->Referer->Data()->read('full_url');
+        
+        $this->Normalizer->normalize($finalUrl,$referer);
         $normalized = $this->Normalizer->getNormalizedUrl();            
         $url_id = $this->Url->getUrlId($normalized);
 
@@ -327,6 +439,10 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         $this->logAnalyzer("METADATA<$hash,$normalized,GATHER>");
         
         return $hash;
+    }
+    
+    private function getTestUrlHash(){
+        return time() + rand(1,40300);
     }
     
     /* Hace reemplazo de los hipervinculos por la url configurada como feed en el
@@ -379,5 +495,23 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         $urls = $this->Scrapper->getImages();
         $nodes = $this->Scrapper->getImageNodes();        
         $this->replaceAttributes($nodes, $urls);
+    }
+    
+    /* Test sobre un archivo */
+    
+    private $Test = false;
+    
+    public function test($file){
+        $this->initScrapper();
+        $this->initNormalizer();
+        
+        $this->Test = true;
+        $this->Scrapper->scrapUrls($file);
+        $this->replaceLinks();
+        $this->replaceStylesheets();
+        $this->replaceScripts();
+        $this->replaceImages();
+        $newFile = $this->Scrapper->getHtml();
+        echo $newFile;
     }
 }

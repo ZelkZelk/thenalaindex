@@ -132,11 +132,6 @@ class UrlNormalizerComponent extends CrawlerUtilityComponent{
         
         $url = "{$scheme}://{$host}:{$port}{$path}";
         
-        if(isset($this->Chunks['fragment'])){
-            $fragment = $this->Chunks['fragment'];
-            $url .= "#{$fragment}";
-        }
-        
         if(isset($this->Chunks['query'])){
             $query = $this->Chunks['query'];
             $url .= "?{$query}";
@@ -150,9 +145,10 @@ class UrlNormalizerComponent extends CrawlerUtilityComponent{
     
     private $TargetUrl;
     
-    public function normalize($url){
-        $this->TargetUrl = $url;
-        $chunks = parse_url($url);
+    public function normalize($url,$referer = null){
+        $absoluteUrl = $this->absolutize($url,$referer);
+        $this->TargetUrl = $absoluteUrl;
+        $chunks = parse_url($absoluteUrl);
         
         if($chunks === false){
             $chunks = [];
@@ -179,4 +175,109 @@ class UrlNormalizerComponent extends CrawlerUtilityComponent{
         
         $this->Chunks = $chunks;
     }
-}
+    
+    /* Convierte la Url a una Url absoluta */
+    
+    private function absolutize($url,$referer = null){        
+        if($this->isRelative($url)){
+            $refererPath = $this->getBaseUrl($referer);
+            $url = $refererPath . $url;
+        }
+        
+        $final = $this->slashDotsRemover($url);
+        return $final;
+    }
+    
+    /* Se asume que si la url es /../../../loquesea en realidad quiere decir 
+     * /loquesea directamente. */
+    
+    private function slashDotsRemover($url){   
+        $chunks = parse_url($url);
+        $path = '';
+        
+        if(isset($chunks['path'])){
+            $path = $chunks['path'];
+        }
+        
+        $pathChunks = explode('/', $path);
+        
+        foreach($pathChunks as $i => $pathChunk){
+            switch ($pathChunk){
+                case '.':
+                    unset($pathChunks[$i]);
+                    break;
+                case '..':
+                    unset($pathChunks[$i]);
+                    
+                    if(isset($pathChunks[$i - 1])){
+                        unset($pathChunks[$i - 1]);
+                    }
+                    
+                    break;
+            }
+        }
+        
+        
+        $chunks['path'] = implode('/', $pathChunks);
+        return $this->rebuildUrl($chunks);
+    }
+    
+    /* Construye la URL a partir de los pedazos creados por la funcion parse_url() */
+    
+    private function rebuildUrl($chunks){
+        $url = '';
+        
+        if(isset($chunks['scheme'])){
+            $url .= $chunks['scheme'] . '://';
+        }
+        
+        if(isset($chunks['host'])){
+            $url .= $chunks['host'];
+        }
+        
+        if(isset($chunks['port'])){
+            $url .= ':' . $chunks['port'];
+        }
+        
+        if(isset($chunks['path'])){
+            $url .= $chunks['path'];
+        }
+        
+        if(isset($chunks['query'])){
+            $url .= '?' . $chunks['query'];
+        }
+        
+        if(isset($chunks['fragment'])){
+            $url .= '#' . $chunks['fragment'];
+        }
+        
+        return $url;
+    }
+    
+    /* Determina si la URL es absoluta */
+    
+    private function isRelative($url){      
+        $first = substr($url,0,1);
+        
+        if($first === '/'){
+            return false;
+        }
+        
+        $chunks = parse_url($url);
+        $result = true;
+        
+        if(isset($chunks['host'])){
+            $result = false;
+        }
+        
+        return $result;
+    }
+    
+    /* Determina la Base URL (es decir elimina lo que esta despues del ultimo slash) */
+    
+    private function getBaseUrl($url){
+        $index = strrpos($url, '/');
+        $base = substr($url,0,$index + 1);
+        return $base;
+    }
+} 

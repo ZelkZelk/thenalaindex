@@ -63,6 +63,9 @@ class Url extends AppModel {
         if($this->id === false){
             $this->id = $this->insert($target,$url);
         }
+        else{
+            $this->loadFromId($this->id);
+        }
     }
     
     /* Inserta una nueva URL a la BD */
@@ -86,9 +89,12 @@ class Url extends AppModel {
         return false;
     }
     
-    /* Devuelve el ID de una URL */
+    /* Devuelve el ID de una URL.
+     * FallbackIndex establece si se buscara la url con un / al final, debido
+     * a la redireccion que hacen algunos servers.
+     */
     
-    public function getUrlId($url){
+    public function getUrlId($url, $fallbackIndex = true){
         $cnd = [];
         $cnd['Url.full_url'] = $url;
         
@@ -102,6 +108,16 @@ class Url extends AppModel {
             return $this->id;
         }
         
-        return false;
+        if($fallbackIndex === false){
+            return false;         
+        }
+        
+        $last = substr($url,-1);
+        
+        if($last === '/'){
+            return false;
+        }
+        
+        return $this->getUrlId($url . '/',false);   
     }
 }

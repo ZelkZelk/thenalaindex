@@ -8,6 +8,15 @@ App::import('Model', 'CrawlerLog');
 class HttpClientComponent extends CrawlerUtilityComponent{
     private static $TAG = '[HTTP]';
     
+    /* A veces los navegadores hacen redirecciones */
+    
+    private $effectiveUrl;
+    
+    public function getEffectiveUrl(){
+        return $this->effectiveUrl;
+    }
+        
+     
     /* Override de la funcion generica para agregar el TAG http
      */
     
@@ -72,7 +81,8 @@ class HttpClientComponent extends CrawlerUtilityComponent{
         $this->status = curl_getinfo($this->Curl, CURLINFO_HTTP_CODE);
         $this->time = curl_getinfo($this->Curl, CURLINFO_TOTAL_TIME);
         $this->size = curl_getinfo($this->Curl, CURLINFO_SIZE_DOWNLOAD);
-        $this->error = curl_errno($this->Curl);
+        $this->error = curl_errno($this->Curl);        
+        $this->effectiveUrl = curl_getinfo($this->Curl, CURLINFO_EFFECTIVE_URL);
         
         $this->logConnection();
         $this->logCommit();

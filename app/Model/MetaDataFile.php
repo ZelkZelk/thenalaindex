@@ -264,6 +264,54 @@ class MetaDataFile extends AppModel {
         return $response;
     }
     
+    /* Determina si es una imagen en el analisis del campo mime.
+     * Debe contener image/ para ser considerado. */
+    
+    private static $IMAGE_MIME = 'image/';
+    
+    public function isImage(){
+        $mime = $this->Data()->read('mime');
+        $response = true;
+        
+        if(strstr($mime, self::$IMAGE_MIME) === false){
+            $response = false;
+        }
+        
+        return $response;
+    }
+    
+    /* Determina si es un javascript basado en el analisis del campo mime.
+     * Debe contener text/javascript para ser considerado. */
+    
+    private static $JS_MIME = 'text/javascript';
+    
+    public function isScript(){
+        $mime = $this->Data()->read('mime');
+        $response = true;
+        
+        if(strstr($mime, self::$JS_MIME) === false){
+            $response = false;
+        }
+        
+        return $response;
+    }
+    
+    /* Determina si es un css basado en el analisis del campo mime.
+     * Debe contener text/javascript para ser considerado. */
+    
+    private static $CSS_MIME = 'text/css';
+    
+    public function isStylesheet(){
+        $mime = $this->Data()->read('mime');
+        $response = true;
+        
+        if(strstr($mime, self::$CSS_MIME) === false){
+            $response = false;
+        }
+        
+        return $response;
+    }
+    
     /* Obtiene los Meta Datos de un determinado proceso de Crawling */
     
     public function getHtmldocCrawled($crawler_log_id,$limit = 100,$offset = 0){
@@ -297,5 +345,24 @@ class MetaDataFile extends AppModel {
         }
         
         return false;
+    }
+    
+    /* Carga un Meta Data desde su Hash */
+    
+    public function loadHash($hash){
+        $cnd = [];
+        $cnd['MetaDataFile.hash'] = $hash;
+        
+        $data = $this->find('first', [
+            'conditions' => $cnd
+        ]);
+        
+        if($data){
+            $alias = $this->alias;
+            $blob = $data[$alias];
+            $this->loadArray($blob);
+        }
+        
+        return $data;
     }
 }

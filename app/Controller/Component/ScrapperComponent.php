@@ -1,6 +1,7 @@
 <?php
 
 App::import('Model','DataFile');
+App::uses('LinkAnalyzerComponent', 'Controller/Component');
 App::uses('CrawlerUtilityComponent', 'Controller/Component');
 
 /* Este componente se encarga del analisis de los documentos html para 
@@ -21,6 +22,17 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $this->setLogFunction($logFunction);
         $this->setCrawlerLog($log);
     }    
+    
+    /* Funcion que llama a logcat, util para agregar info extra a todos los 
+     * mensajes.
+     */
+    
+    private static $TAG = '[SCRAPPER]';
+    
+    private function logScrapper($message){
+        $full = self::$TAG . ' ' . $message;
+        $this->logInfo($full);
+    }
     
     /* URL Scrapper.
      * 
@@ -97,7 +109,8 @@ class ScrapperComponent extends CrawlerUtilityComponent{
      * 
      **/
     
-    private static $STYLE_INCLUDE_REGEX = '/\@import\s+url\(\"(.*)\"\)\;*/';
+    private static $STYLE_INCLUDE_REGEX = '/\@import\s+url\((\"|\')(.*)(\"|\')\)\;*\s*(\/\*(.*?)\*\/)?/';
+    public static $URL_SEPARATOR = '@@@$$$@@@';
     
     private function scrapStyleTags(){
         $stylesheets = $this->Dom->getElementsByTagName('style');
@@ -107,8 +120,18 @@ class ScrapperComponent extends CrawlerUtilityComponent{
             $regex = self::$STYLE_INCLUDE_REGEX;
             $matches = [];
             
-            preg_match_all($regex, $content, $matches);            
-            $urls = isset($matches[1]) ? $matches[1] : [];
+            preg_match_all($regex, $content, $matches);    
+            
+            $urls = isset($matches[2]) ? $matches[2] : [];
+            $nalaProtocol = isset($matches[5]) ? $matches[5] : [];
+            
+            foreach($nalaProtocol as $i => $protocol){
+                $urlProto = $this->extractUrlProtocol($protocol);
+                
+                if($urlProto){
+                    $urls[$i] .= self::$URL_SEPARATOR . $urlProto;
+                }
+            }
             
             foreach($urls as $url){
                 $this->stylesheets[] = $url;
@@ -117,29 +140,71 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         }        
     }
     
+    /* Extrae la URL del procotolo Nala */
+    
+    private static $PROTOCOL_URL_REGEX = '/%s=(.*?)\s/';
+
+    private function extractUrlProtocol($protocol){
+        $regex = sprintf(self::$PROTOCOL_URL_REGEX, LinkAnalyzerComponent::$DATA_NALA_SOURCE);
+        $matches = [];
+        $url = false;
+        
+        preg_match($regex, $protocol, $matches);
+        
+        if(isset($matches[1])){
+            $url = trim($matches[1]);
+        }
+        
+        if($url === ''){
+            $url = false;
+        }
+        
+        return $url;
+    }
+    
     /* Obtiene los documentos de los tags <LINK> */
     
     private function scrapLinkTags(){
         $stylesheets = $this->Dom->getElementsByTagName('link');
         
         foreach($stylesheets as $stylesheet){
-            $acceptable = false;
+            $valid = $this->isStylesheet($stylesheet);
             
-            foreach($stylesheet->attributes as $attr){
-                $isHref = $attr->nodeName === 'href';                
-                $url = ($isHref) ? $this->extractUrl($attr) : false;
-                
-                if($url){
-                    $acceptable = true;
-                    break;
-                }
+            if($valid === false){
+                continue;
             }
+            
+            $url = $this->extractDomUrl($stylesheet,'href');
+            $acceptable = $url !== false;     
                 
             if($acceptable){
                 $this->stylesheets[] = $url;
                 $this->stylesheetNodes[] = $stylesheet;
             }
         }        
+    }
+    
+    /* Determina si un <LINK> es un stylesshet para eso revisa el atributo
+     * rel, el cual debe ser stylesheet.
+     */
+    
+    private static $REL_STYLESHEET = 'stylesheet';
+    private static $REL = 'rel';
+    
+    private function isStylesheet($stylesheet){
+        $response = false;
+
+        foreach($stylesheet->attributes as $attr){
+            $isRel = $attr->nodeName === self::$REL; 
+            
+            if($isRel){
+                $value = $attr->nodeValue;
+                $response = $value === self::$REL_STYLESHEET;
+                break;
+            }
+        }
+
+        return $response;
     }
     
     /* 
@@ -150,17 +215,8 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $scripts = $this->Dom->getElementsByTagName('script');
         
         foreach($scripts as $script){
-            $acceptable = false;
-            
-            foreach($script->attributes as $attr){
-                $isSrc = $attr->nodeName === 'src';                
-                $url = ($isSrc) ? $this->extractUrl($attr) : false;
-                
-                if($url){
-                    $acceptable = true;
-                    break;
-                }
-            }
+            $url = $this->extractDomUrl($script,'src');
+            $acceptable = $url !== false;            
                 
             if($acceptable){
                 $this->scripts[] = $url;
@@ -177,18 +233,9 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $imgs = $this->Dom->getElementsByTagName('img');
         
         foreach($imgs as $img){
-            $acceptable = false;
+            $url = $this->extractDomUrl($img,'src');
+            $acceptable = $url !== false;
             
-            foreach($img->attributes as $attr){
-                $isSrc = $attr->nodeName === 'src';                
-                $url = ($isSrc) ? $this->extractUrl($attr) : false;
-                
-                if($url){
-                    $acceptable = true;
-                    break;
-                }
-            }
-                
             if($acceptable){
                 $this->images[] = $url;
                 $this->imageNodes[] = $img;
@@ -204,20 +251,8 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $links = $this->Dom->getElementsByTagName('a');
         
         foreach($links as $link){
-            $ignore = false;
-            $url = false;
-            
-            foreach($link->attributes as $attr){
-                if($attr->nodeName === 'rel' && $attr->nodeValue === 'nofollow'){
-                    $ignore = true;
-                    break;
-                }
-                
-                $isHref = $attr->nodeName === 'href';                
-                $url = ($isHref) ? $this->extractUrl($attr) : $url;
-            }
-            
-            $acceptable = ! $ignore && $url !== false;
+            $url = $this->extractDomUrl($link,'href');
+            $acceptable = $url !== false;
                 
             if($acceptable){
                 $this->links[] = $url;
@@ -226,16 +261,55 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         }
     } 
     
+    /* Extra la URL del nodo especificado, tiene como mayor prioridad si existe
+     * el data-nalasource
+     */
+    
+    private function extractDomUrl($link,$from){
+        $url = false;
+
+        foreach($link->attributes as $attr){
+            if($attr->nodeName === 'rel' && $attr->nodeValue === 'nofollow'){
+                return false;
+            }
+
+            $isNala = $attr->nodeName === LinkAnalyzerComponent::$DATA_NALA_SOURCE; 
+            $isFrom = $attr->nodeName === $from; 
+            $extract = $isNala || $isFrom;
+            
+            if($extract){
+                $url = $this->extractUrl($attr);
+            } 
+            
+            if($this->isHyperlink($link)){
+                $url = $this->isValidUrl($url) ? $url : false;
+            }
+            
+            if($isNala && $url !== false){
+                break;
+            }
+        }
+
+        return $url;
+    }
+    
+    /* Determina si el Nodo es un hipervinculo <A> */
+    
+    private function isHyperlink($node){
+        $response = false;
+        
+        if($node->tagName === 'a'){
+            $response = true;
+        }
+        
+        return $response;
+    }
+    
     /* Extrae la URL del atributo, hace algunas validaciones */
     
     private function extractUrl(DomAttr $attr){
         $url = $attr->nodeValue;
-        $response = false;
-        
-        if($this->isValidUrl($url)){
-            $response = $url;
-        }
-        
+        $response = $url;
         return $response;
     }
     
@@ -245,14 +319,17 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $response = true;
         
         if(preg_match('/^javascript:.*$/i', $url)){
+            $this->logScrapper("INVALID<$url,javascript>");
             return false;
         }
         
         if(preg_match('/^mailto:.*$/i', $url)){
+            $this->logScrapper("INVALID<$url,mailto>");
             return false;
         }
                 
         if(preg_match('/^#.*$/i', $url)){
+            $this->logScrapper("INVALID<$url,#>");
             return false;
         }
         
@@ -263,6 +340,13 @@ class ScrapperComponent extends CrawlerUtilityComponent{
     
     public function clear(){
         $this->links = [];
+        $this->linkNodes = [];
+        $this->images = [];
+        $this->imageNodes = [];
+        $this->stylesheets = [];
+        $this->stylesheetNodes = [];
+        $this->scripts = [];
+        $this->scriptNodes = [];
         $this->Dom = null;
     }
     

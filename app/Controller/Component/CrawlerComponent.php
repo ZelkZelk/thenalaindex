@@ -197,7 +197,7 @@ class CrawlerComponent extends Component{
     
     private function linkAnalysis(){    
         $id = $this->CrawlerLog->id;
-        $this->LinkAnalyzerComponent->scanner($id);
+        $this->LinkAnalyzer->scanner($id);
     }
     
     /* Incia el log del componente LinkAnalyzer, cada Target tiene su archivo separado
@@ -387,8 +387,10 @@ class CrawlerComponent extends Component{
             
             $this->sleepCrawl();
             $this->Http->get($url);
+            $this->CrawlerLog->increment('http_petitions');
             
             if($this->Http->isAcceptable() === false){
+                $this->CrawlerLog->increment('http_errors');
                 $this->onHttpInacceptable($url);
             }
             else{
@@ -459,17 +461,46 @@ class CrawlerComponent extends Component{
      *      3. Almacena el Archivo de Datos relacionado al Meta Dato
      *      4. Realiza el analisis del arbol DOM en busca de mas urls para encolar
      *      5. Establece la url como explorada satisfactoriamente, la saca de la
-     *          cola.
+     *          cola. Si hubo algun redirect por parte del server dicha URL tambien
+     *          debe establecerse como explorada.
      **/
     
     private $Url = null;
     
-    private function onHttpAcceptable($url){
-        $this->createUrl($url);
+    private function onHttpAcceptable($url){        
+        $this->loadReferer();
+        $this->createUrl();
         $this->createMetaData();
         $this->createDataFile();
         $this->createHtmldocLink();
+        
+        if($this->Referer !== $url){
+            $this->logcat("MOVED URL:<{$url},{$this->Referer}");
+            $this->Queue->push($this->Referer);      
+            $this->Queue->done($this->Referer);        
+        }
+        
+        $last = substr($url,-1);
+        
+        if($last == '/'){
+            $count = strlen($url);
+            $slashless = substr($url,0,$count - 1);
+            $this->logcat("TRAILLING SLASH URL:<{$url},{$slashless}");
+            $this->Queue->push($slashless);      
+            $this->Queue->done($slashless);        
+        }
+        
         $this->Queue->done($url);        
+    }
+    
+    /* Carga la URL referer */
+    
+    private $Referer;
+    
+    private function loadReferer(){
+        $effectiveUrl = $this->Http->getEffectiveUrl();
+        $this->Normalizer->normalize($effectiveUrl);
+        $this->Referer = $this->Normalizer->getNormalizedUrl();
     }
     
     /* Crea el HtmldocLink de la URL explorada. Almacena tanto en BD como
@@ -571,9 +602,10 @@ class CrawlerComponent extends Component{
     
     private function enqueueHyperlinks(){
         $links = $this->Scrapper->getLinks();
+        $referer = $this->Referer;
         
         foreach($links as $link){
-            $this->Normalizer->normalize($link);
+            $this->Normalizer->normalize($link, $referer);
             
             if($this->Normalizer->isAllowed()){
                 $url = $this->Normalizer->getNormalizedUrl();
@@ -590,9 +622,10 @@ class CrawlerComponent extends Component{
     
     private function enqueueAssets(){
         $assets = $this->Scrapper->getAssets();
-        
+        $referer = $this->Referer;
+                
         foreach($assets as $asset){
-            $this->Normalizer->normalize($asset);
+            $this->Normalizer->normalize($asset,$referer);
             $url = $this->Normalizer->getNormalizedUrl();
             $this->Queue->push($url);
         }        
@@ -604,6 +637,19 @@ class CrawlerComponent extends Component{
     private function createMetaData(){
         $headerData = $this->MetaDataFile->headerAnalysis($this->Url,$this->Http);
         $this->MetaDataFile->createMetaData($this->CrawlerLog,$headerData);
+                
+        if($this->MetaDataFile->isHtml()){
+            $this->CrawlerLog->increment('html_crawled');
+        }
+        else if($this->MetaDataFile->isImage()){
+            $this->CrawlerLog->increment('img_crawled');            
+        }
+        else if($this->MetaDataFile->isStylesheet()){
+            $this->CrawlerLog->increment('css_crawled');            
+        }
+        else if($this->MetaDataFile->isScript()){
+            $this->CrawlerLog->increment('js_crawled');            
+        }
     }
     
     /* Almacena en BD el cuerpo de la conexion HTTP realzida relacionandolo
@@ -624,12 +670,12 @@ class CrawlerComponent extends Component{
     /* Inicia el modelo Url de forma lazy, luego intenta crear la url pasada 
      * como parametro. */
     
-    private function createUrl($url){
+    private function createUrl(){
         if(is_null($this->Url)){
             $this->Url = new Url();
         }
         
-        $this->Url->alloc($this->Target,$url);
+        $this->Url->alloc($this->Target,$this->Referer);
     }
     
     /* Se echa a dormir si el tiempo configurado (en milisegundos) es mayor a 0 */
