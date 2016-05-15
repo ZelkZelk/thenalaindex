@@ -70,6 +70,7 @@ class CrawlerComponent extends Component{
         $this->httpWait = Configure::read('Crawler.http_wait');
         $this->failureLimit = Configure::read('Crawler.failure_limit');
         ini_set('memory_limit',Configure::read('Crawler.max_memory'));
+        register_shutdown_function('deadpitbull');
     }
     
     /* Punto de partida para el proceso de crawling.
@@ -760,4 +761,15 @@ class CrawlerComponent extends Component{
         
         $this->Notification->done($this->CrawlerLog);
     }
+}
+
+function deadpitbull() {
+    $tmp = '/tmp/nalacrash-' . time() . '.txt';
+    
+    $message  = [
+        'error' => error_get_last(),
+        'conf' => ini_get_all()
+    ];
+    
+    file_put_contents($tmp, json_encode($message));
 }
