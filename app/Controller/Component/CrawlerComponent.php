@@ -396,6 +396,9 @@ class CrawlerComponent extends Component{
             else{
                 $this->onHttpAcceptable($url);
             }
+            
+            print_r($this->CrawlerLog->Data()->dump());
+            $this->CrawlerLog->store();
         } 
         
         $this->memorySummary();
