@@ -69,6 +69,7 @@ class CrawlerComponent extends Component{
         Configure::load('crawler');
         $this->httpWait = Configure::read('Crawler.http_wait');
         $this->failureLimit = Configure::read('Crawler.failure_limit');
+        ini_set('memory_limit',Configure::read('Crawler.max_memory'));
     }
     
     /* Punto de partida para el proceso de crawling.
@@ -397,7 +398,6 @@ class CrawlerComponent extends Component{
                 $this->onHttpAcceptable($url);
             }
             
-            print_r($this->CrawlerLog->Data()->dump());
             $this->CrawlerLog->store();
         } 
         
