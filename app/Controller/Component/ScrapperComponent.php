@@ -96,7 +96,6 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         
         libxml_use_internal_errors(false);
         libxml_use_internal_errors(true);
-        unset($this->Dom);
     }
     
     /* 

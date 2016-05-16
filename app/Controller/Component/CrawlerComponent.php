@@ -380,7 +380,7 @@ class CrawlerComponent extends Component{
         $this->initMemoryLogs();
             
         while($url = $this->Queue->fetch()){ 
-            $this->memoryProfiler();
+            $this->memoryProfiler('HEAD');
             
             if($this->Robots->isAllowed($url) === false){
                 $this->onRobotsDisallowed($url);
@@ -390,6 +390,7 @@ class CrawlerComponent extends Component{
             $this->sleepCrawl();
             $this->Http->get($url);
             $this->CrawlerLog->increment('http_petitions');
+            $this->memoryProfiler('GET');
             
             if($this->Http->isAcceptable() === false){
                 $this->CrawlerLog->increment('http_errors');
@@ -400,6 +401,7 @@ class CrawlerComponent extends Component{
             }
             
             $this->CrawlerLog->store();
+            $this->memoryProfiler('TAIL');
         } 
         
         $this->memorySummary();
@@ -419,13 +421,13 @@ class CrawlerComponent extends Component{
     
     /* Con esta funcion reportamos el uso de memoria */
     
-    private function memoryProfiler(){
+    private function memoryProfiler($tag){
         $enabled = Configure::read('Crawler.memory_profiler');
         
         if($enabled){
             $emalloc = memory_get_usage();
             $real = memory_get_usage(true);            
-            $this->memoryLog("<EMALLOC={$emalloc},REAL={$real}>");
+            $this->memoryLog("[$tag] <EMALLOC={$emalloc},REAL={$real}>");
         }
     }
     
@@ -712,6 +714,7 @@ class CrawlerComponent extends Component{
     
     private function onHttpInacceptable($url){
         $counter = $this->Queue->failureIncrement($url);
+        $this->Http->clear();   
         
         if($counter >= $this->failureLimit){
             $this->Queue->fail($url);

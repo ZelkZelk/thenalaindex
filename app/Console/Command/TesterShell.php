@@ -52,6 +52,16 @@ class TesterShell extends AppShell {
         $this->memoryReport();
     }
     
+    public function memory2(){
+        $this->memoryReport();
+        $this->Dom = new DOMDocument();
+        $this->Dom->load('http://www.pol.una.py');
+        $this->memoryReport();
+        
+        unset($this->Dom);
+        $this->memoryReport();
+    }
+    
     public function queue2(){
         $collection = new ComponentCollection();
         $this->Queue = new QueueComponent($collection);

@@ -45,10 +45,6 @@ class CrawlerUtilityComponent extends Component{
     
     protected function logInfo($message){
         $this->logcat($message);
-        
-        if( ! is_null($this->CrawlerLog)){
-            $this->CrawlerLog->trace($message);
-        }
     }
     
     /* Funcion que utiliza la funcion de loggin 
@@ -56,10 +52,6 @@ class CrawlerUtilityComponent extends Component{
     
     protected function logCritical($message){
         $this->logcat($message);
-        
-        if( ! is_null($this->CrawlerLog)){
-            $this->CrawlerLog->appendTrace($message);
-        }
     }
     
     /* Comitea los mensajes existentes en memoria a la BD */
