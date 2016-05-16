@@ -81,6 +81,7 @@ class ScrapperComponent extends CrawlerUtilityComponent{
     /* Obtiene las URLS usando CSSPATH queries */
     
     public function scrapUrls($textHtml){
+        libxml_use_internal_errors(true);
         $this->Dom = new DOMDocument();
         
         if(@$this->Dom->loadHTML($textHtml)){        
@@ -92,6 +93,10 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         else{
             $this->logInfo('Invalid HTML');
         }
+        
+        libxml_use_internal_errors(false);
+        libxml_use_internal_errors(true);
+        unset($this->Dom);
     }
     
     /* 

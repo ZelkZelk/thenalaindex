@@ -214,4 +214,27 @@ class CrawlerLog extends AppModel {
         
         $this->Data()->write($field,$value);
     }
+    
+    /* Busca logs por target_id paginado */
+    
+    public function findPagedByTarget($target_id,$page,$limit){
+        $offset = ($page - 1) * $limit;
+        
+        $logs = $this->find('all',[
+            'order' => 'CrawlerLog.starting desc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+            ],
+            'conditions' => [
+                'CrawlerLog.target_id' => $target_id,
+                'CrawlerLog.status' => 'done'
+            ],
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+        
+        return $logs;
+    }
 }

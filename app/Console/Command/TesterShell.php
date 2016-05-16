@@ -35,6 +35,23 @@ class TesterShell extends AppShell {
         $this->Queue->debug();
     }
     
+    public function memoryReport(){
+        $usage = memory_get_usage();
+        $real = memory_get_usage(true);
+        
+        echo "USAGE=<$usage> REAL=<$real>\n";
+    }
+    
+    public function memory(){
+        $this->memoryReport();
+        $this->DataFile = new DataFile();        
+        $this->DataFile->loadFromId(1);      
+        $this->memoryReport();
+        
+        $this->DataFile->clearFields();
+        $this->memoryReport();
+    }
+    
     public function queue2(){
         $collection = new ComponentCollection();
         $this->Queue = new QueueComponent($collection);

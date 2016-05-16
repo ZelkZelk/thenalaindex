@@ -93,6 +93,19 @@ class Target extends AppModel {
         
         return $targets;
     }
+    /* Obtiene los Targets habilitados. */
+    
+    public function findTargets(){
+        $cnd = [];
+        $cnd['Target.status'] = true;
+        
+        $targets = $this->find('all',[
+            'order' => 'Target.name',
+            'conditions' => $cnd
+        ]);
+        
+        return $targets;
+    }
     
     /* Inicializa el Crawler, setea las fecha correctas para last_crawl y first_crawl */
     
