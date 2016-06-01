@@ -1,11 +1,11 @@
 <?php
 
-App::uses('AppController', 'Controller');
+App::uses('BackendAppController', 'Controller');
 
-class NotificationsController extends AppController {
-    public $uses = array('Notification');
-    public $components = array('React');
-    public $helpers = array('Scaffold');
+class NotificationsController extends BackendAppController {
+    public $uses = [ 'Notification' ];
+    public $components = [ 'React', 'Login','Session' ];
+    public $helpers = [ 'Scaffold' ];
     
     public function email(){
         $links = $this->Notification->fetchLinks();

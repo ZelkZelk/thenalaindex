@@ -226,6 +226,11 @@ class CrawlerLog extends AppModel {
                 'CrawlerLog.id',
                 'CrawlerLog.starting',
                 'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
             ],
             'conditions' => [
                 'CrawlerLog.target_id' => $target_id,
@@ -237,4 +242,35 @@ class CrawlerLog extends AppModel {
         
         return $logs;
     }
+    
+    /* Setea el root hash, solo si no es NULL */
+    
+    public function setRootHash($hash){
+        $root = $this->Data()->read('root_hash');
+                
+        if(is_null($root)){
+            $this->Data()->write('root_hash',$hash);
+            if($this->store() === false){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Obtiene los crawler logs sin root hash
+     */
+    
+    public function findUnRooted(){
+        $cnd = [];
+        $cnd['CrawlerLog.root_hash'] = null;
+        
+        return $this->find('all',[
+            'conditions' => $cnd,
+            'fields' => 'CrawlerLog.id'
+        ]);
+    }
+    
+    
 }

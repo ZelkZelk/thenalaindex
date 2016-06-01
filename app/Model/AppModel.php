@@ -555,8 +555,7 @@ abstract class AppModel extends Model  {
     /* Callback comun a todos los modelos para interceptar los find queries. */
 
     public function beforeFind($query) {
-        $query = $this->logicalFind($query);
-        
+        $query = $this->logicalFind($query);        
         return $query;
     }
 

@@ -469,6 +469,8 @@ class CrawlerComponent extends Component{
      *      5. Establece la url como explorada satisfactoriamente, la saca de la
      *          cola. Si hubo algun redirect por parte del server dicha URL tambien
      *          debe establecerse como explorada.
+     *      6. Actualiza el root hash de la exploracion, el root hash es el primer
+     *          hash creado.
      **/
     
     private $Url = null;
@@ -479,6 +481,7 @@ class CrawlerComponent extends Component{
         $this->createMetaData();
         $this->createDataFile();
         $this->createHtmldocLink();
+        $this->setRootHash();
         
         if($this->Referer !== $url){
             $this->logcat("MOVED URL:<{$url},{$this->Referer}");
@@ -497,6 +500,26 @@ class CrawlerComponent extends Component{
         }
         
         $this->Queue->done($url);        
+    }
+    
+    /**
+     * Actualiza el root hash de la exploracion actual, el root hash siempre
+     * sera el primer hash creado.
+     */
+    
+    private $rootHashed = false;
+    
+    private function setRootHash(){
+        if($this->rootHashed){
+            return;
+        }
+        
+        $this->rootHashed = true;
+        $hash = $this->MetaDataFile->getHash();
+        
+        if($this->CrawlerLog->setRootHash($hash) === false){
+            throw new Exception('CrawlerLog::setRootHash() === false');
+        }
     }
     
     /* Carga la URL referer */

@@ -1,17 +1,17 @@
 var BigLink = require('../components/biglink.js');
 
 var LinkList = React.createClass({
-    protTypes: {
+    propTypes: {
         links : React.PropTypes.array.isRequired
     },
-    render: function() {              
+    render: function() {
         return (
             <div className="row">
                 <div className="col-md-12 bigsinglesport">
                     <div className="portlet box">
                         <div className="portlet-body">
                             <div className="row"> { this.props.links.map(function(link,i){
-                                    return <BigLink id={link.id} key={link.id} icon={link.icon} click={link.click} label={link.label} sublabel={link.sublabel}/>                          
+                                    return <BigLink id={link.id} key={link.id} icon={link.icon} click={link.click} label={link.label} sublabel={link.sublabel}/>
                                 })
                             } </div>
                         </div>

@@ -87,8 +87,8 @@ class WebserviceController extends Controller {
     private $schema = [];
     
     private function parseConf(){
-        Configure::load('webservice');
-        $key = "v{$this->version}.{$this->webservice}";
+        Configure::load("webservice_v{$this->version}");
+        $key = "Webservice.{$this->webservice}";
         $conf = Configure::read($key);
         
         if($conf){

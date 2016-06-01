@@ -19,8 +19,12 @@ class WebserviceVersion1Component extends Component{
         
         foreach($targets as $target){
             $output[] = [
+                'id' => $target[$alias]['id'],
                 'url' => $target[$alias]['url'],
-                'name' => $target[$alias]['name']
+                'name' => $target[$alias]['name'],
+                'first_crawl' => $target[$alias]['first_crawl'],
+                'last_crawl' => $target[$alias]['last_crawl'],
+                'histories' => $target[0]['histories'],
             ];
         }
                 

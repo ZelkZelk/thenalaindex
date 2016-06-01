@@ -1,12 +1,12 @@
 <?php
 
-App::uses('AppController', 'Controller');
+App::uses('BackendAppController', 'Controller');
 
-class PagesController extends AppController {
+class BackendController extends BackendAppController {
     private static $loginDoneString = 'Bienvenido a The Nala Index';  
     private static $logoutDoneString = 'Sesion finalizada satisfactoriamente';  
-    public $uses = array('Administrator');
-    public $components = array('Login');
+    public $uses = [ 'Administrator' ];
+    public $components = [ 'Login', 'Session' ];
 
     public function index(){
         

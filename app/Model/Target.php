@@ -97,11 +97,19 @@ class Target extends AppModel {
     
     public function findTargets(){
         $cnd = [];
-        $cnd['Target.status'] = true;
+        
+        $joins = [];
+        $joins[] = 'INNER JOIN crawler.crawler_logs AS "CrawlerLog" ON target_id = "Target".id AND "CrawlerLog".status = \'done\'';
+        
+        $group = 'Target.id';
+        $fields = 'Target.*, count(*) as histories';
         
         $targets = $this->find('all',[
             'order' => 'Target.name',
-            'conditions' => $cnd
+            'conditions' => $cnd,
+            'joins' => $joins,
+            'group' => $group,
+            'fields' => $fields
         ]);
         
         return $targets;
