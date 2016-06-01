@@ -104,4 +104,32 @@ class AppController extends Controller {
         $this->set('CUSTOM_JS',$this->getJs());
         $this->set('CUSTOM_JS_VARS',$this->getJsVars());
     }
+    
+    /* Presente un mensaje con informacion emergente al usuario, acerca de un
+     * evento satisfactorio. */
+    
+    protected function done($message){
+        $this->Session->setFlash($message,'flash/popup_done');
+    }
+    
+    /* Presente un mensaje con informacion emergente al usuario, acerca de una
+     * advertencia que debe tener en cuenta. */
+    
+    protected function warning($message){
+        $this->Session->setFlash($message,'flash/popup_warning');
+    }
+    
+    /* Presente un mensaje con informacion emergente al usuario, acerca de informacion
+     * que debe tener en cuenta. */
+    
+    protected function info($message){
+        $this->Session->setFlash($message,'flash/popup_info');
+    }
+    
+    /* Presente un mensaje con informacion emergente al usuario, acerca de un fallo
+     * ocurrido en el sistema, o por otros motivos que desencadenen un error. */
+    
+    protected function fail($message){
+        $this->Session->setFlash($message,'flash/popup_fail');
+    }
 }
