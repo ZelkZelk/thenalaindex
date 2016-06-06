@@ -35,6 +35,12 @@ var HttpClient = function(){
         return response;
     };
 
+    this.abort = function(){
+        if(this.xhr !== null){
+            this.xhr.abort();
+        }
+    };
+
     this.request = function(){
         var xhr = new XMLHttpRequest();
         var self = this;

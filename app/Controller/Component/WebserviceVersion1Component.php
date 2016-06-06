@@ -49,11 +49,17 @@ class WebserviceVersion1Component extends Component{
             $logs = $CrawlerLog->findPagedByTarget($id,$page,$limit);
             $alias = $CrawlerLog->alias;
             
-            $output = [];
+            $histories = [];
             
             foreach($logs as $log){
-                $output[] = $log[$alias];
+                $histories[] = $log[$alias];
             }
+            
+            $output = [
+                'histories' => $histories,
+                'target' => $Target->Data()->dump(),
+                'page' => $page
+            ];
             
             $this->Controller->pushOutput($output);
         }

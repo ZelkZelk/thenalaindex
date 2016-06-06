@@ -97,6 +97,7 @@ class Target extends AppModel {
     
     public function findTargets(){
         $cnd = [];
+        $cnd['Target.status'] = true;
         
         $joins = [];
         $joins[] = 'INNER JOIN crawler.crawler_logs AS "CrawlerLog" ON target_id = "Target".id AND "CrawlerLog".status = \'done\'';

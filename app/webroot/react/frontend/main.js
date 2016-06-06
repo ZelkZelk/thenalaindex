@@ -1,35 +1,29 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
+
 var Modules = require('../components/modules.js');
 
 var Dispatcher = {
     config: null,
-    params: null,
-    configure: function (config, params) {
+    configure: function (config) {
         this.config = config;
-        this.params = params;
     },
-    navigate: function (data, swapper) {
-        var url = this.resolvModuleUrl(data);
-        history.pushState(data, null, url);
+    navigate: function (module, params, sweeper) {
+        var data = {
+            module: module,
+            params: params
+        };
 
-        swapper(data);
+        var url = this.resolvModuleUrl(module, params);
+        history.pushState(data, null, url);
+        sweeper(module, params);
     },
     getSlug: function (string) {
         var slug = string.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
         return slug;
     },
-    resolv: function () {
-        var module = Modules.index.name;
-
-        if (typeof this.params.module !== 'undefined') {
-            module = this.params.module;
-        }
-
-        return module;
-    },
-    resolvModuleUI: function (data, swapper) {
+    resolvModuleUI: function (data, swapper, feeder) {
         var render = React.createElement(
             'div',
             null,
@@ -44,9 +38,8 @@ var Dispatcher = {
         render = Modules[module].render(data, swapper);
         return render;
     },
-    resolvModuleApi: function (data) {
+    resolvModuleApi: function (module, params) {
         var api = '/api-config-not-set-yet.json';
-        var module = data.module;
 
         if (typeof this.config === 'undefined') {
             return api;
@@ -61,17 +54,11 @@ var Dispatcher = {
         }
 
         api = this.config.api[module];
-        api = api + this.getQueryString(data);
+        api = api + this.resolvModuleQueryString(module, params);
         return api;
     },
-    resolvModuleUrl: function (data) {
+    resolvModuleUrl: function (module, params) {
         var url = '/url-config-not-set-yet.html';
-
-        if (typeof data.module === 'undefined') {
-            return url;
-        }
-
-        var module = data.module;
 
         if (typeof this.config === 'undefined') {
             return url;
@@ -85,11 +72,11 @@ var Dispatcher = {
             return url;
         }
 
-        url = this.getUrlReplacement(this.config.url[module], data);
+        url = this.getUrlReplacement(this.config.url[module], params);
         return url;
     },
-    resolvModuleQueryString: function (module) {
-        var querystringdata = this.resolvQueryStringData(module);
+    resolvModuleQueryString: function (module, params) {
+        var querystringdata = this.resolvQueryStringData(module, params);
 
         if (querystringdata === false) {
             return false;
@@ -104,7 +91,7 @@ var Dispatcher = {
 
         return querystring.substring(0, querystring.length - 1);
     },
-    resolvQueryStringData: function (module) {
+    resolvQueryStringData: function (module, params) {
         var querystring = false;
 
         if (typeof this.config === 'undefined') {
@@ -124,34 +111,20 @@ var Dispatcher = {
         for (var name in this.config.querystring[module]) {
             var param = this.config.querystring[module][name];
 
-            if (typeof this.params[param] !== 'undefined') {
-                querystring[name] = this.params[param];
+            if (typeof params[param] !== 'undefined') {
+                querystring[name] = params[param];
             }
         }
 
         return querystring;
     },
-    getQueryString: function (data) {
-        if (typeof data.querystring === 'undefined') {
-            return '';
-        }
-
-        var querystring = '?';
-
-        for (var param in data.querystring) {
-            var value = data.querystring[param];
-            querystring += param + "=" + value + "&";
-        }
-
-        return querystring.substring(0, querystring.length - 1);
-    },
-    getUrlReplacement: function (rawUrl, data) {
+    getUrlReplacement: function (rawUrl, params) {
         var res = rawUrl.match(/(%.*?%)/g);
         var url = rawUrl;
 
         for (var i in res) {
             var token = res[i].replace(/%/g, '');
-            var replacement = this.getPathReplacement(token, data);
+            var replacement = this.getPathReplacement(token, params);
             var needle = "%" + token + "%";
 
             url = url.replace(needle, replacement);
@@ -159,11 +132,11 @@ var Dispatcher = {
 
         return url;
     },
-    getPathReplacement: function (token, data) {
+    getPathReplacement: function (token, params) {
         var path = 'path-not-set-yet';
 
-        if (typeof data[token] !== 'undefined') {
-            path = this.getSlug(String(data[token]));
+        if (typeof params[token] !== 'undefined') {
+            path = this.getSlug(String(params[token]));
         }
 
         return path;
@@ -172,7 +145,547 @@ var Dispatcher = {
 
 module.exports = Dispatcher;
 
-},{"../components/modules.js":3,"../node_modules/html5-history-api/history.js":8}],2:[function(require,module,exports){
+},{"../components/modules.js":7,"../node_modules/html5-history-api/history.js":12}],2:[function(require,module,exports){
+require('../node_modules/html5-history-api/history.js');
+
+var Dispatcher = require('../components/dispatcher.js');
+var HttpClient = require('../components/http_client.js');
+
+var States = {
+    loading: 1,
+    error: 2,
+    done: 3
+};
+
+var UI = {
+    loading: React.createElement(
+        'div',
+        null,
+        'C A R G A N D O'
+    ),
+    error: function (retry) {
+        var callback = retry;
+
+        return React.createElement(
+            'div',
+            null,
+            React.createElement(
+                'p',
+                null,
+                'E R R O R'
+            ),
+            React.createElement(
+                'button',
+                { onClick: callback },
+                'REINTENTAR'
+            )
+        );
+    },
+    done: function (data, callbacks) {
+        return Dispatcher.resolvModuleUI(data, callbacks);
+    }
+};
+
+var Engine = React.createClass({
+    displayName: 'Engine',
+
+    request: null,
+    propTypes: {
+        module: React.PropTypes.string.isRequired,
+        params: React.PropTypes.object.isRequired
+    },
+    getInitialState: function () {
+        var state = this.getModuleState(this.props.module, this.props.params);
+        state.state = States.loading;
+        return state;
+    },
+    getModuleState: function (module, params) {
+        var state = {
+            module: module,
+            params: params
+        };
+
+        return state;
+    },
+    componentWillMount: function () {
+        this.fetch();
+        this.historyCallbacks();
+    },
+    historyCallbacks: function () {
+        var self = this;
+
+        window.addEventListener("popstate", function (event) {
+            var module;
+            var params;
+
+            if (history.state === null) {
+                return;
+            }
+
+            if (typeof history.state.module === 'undefined') {
+                return;
+            }
+
+            if (typeof history.state.params === 'undefined') {
+                return;
+            }
+
+            module = history.state.module;
+            params = history.state.params;
+
+            self.swapModule(module, params);
+        });
+
+        history.pushState(this.getInitialState(), null, location.href);
+    },
+    getCurrentState: function () {
+        var state = null;
+
+        if (typeof this.state !== 'undefined') {
+            if (typeof this.state.state !== 'undefined') {
+                state = this.state;
+            }
+        }
+
+        if (state === null) {
+            state = this.getInitialState();
+        }
+
+        return state.state;
+    },
+    swapModule: function (module, params) {
+        this.load(module, params);
+    },
+    getModule: function () {
+        var module = this.state.module;
+        return module;
+    },
+    fetch: function () {
+        this.fetchModule(this.state, this.error, this.done);
+    },
+    fetchModule: function (state, errorCallback, doneCallback) {
+        var module = state.module;
+        var params = state.params;
+        var api = this.resolvApi(module, params);
+
+        if (this.request !== null) {
+            this.request.abort();
+        }
+
+        this.request = new HttpClient();
+
+        this.request.getJson(api, {
+            error: errorCallback,
+            done: doneCallback
+        });
+    },
+    resolvApi: function (module, params) {
+        var api = Dispatcher.resolvModuleApi(module, params);
+        return api;
+    },
+    resolvRenderUI: function (state, module) {
+        var renderUI = React.createElement(
+            'div',
+            null,
+            'No View Set... yet! '
+        );
+
+        switch (state) {
+            case States.loading:
+                renderUI = this.resolvLoadingUI();
+                break;
+            case States.error:
+                renderUI = this.resolvErrorUI();
+                break;
+            case States.done:
+                renderUI = this.resolvDoneUI(module);
+                break;
+        }
+
+        return renderUI;
+    },
+    resolvLoadingUI: function () {
+        var render = UI.loading;
+        return render;
+    },
+    resolvErrorUI: function () {
+        var renderUI = UI.error(this.retry);
+        return renderUI;
+    },
+    resolvDoneUI: function (module) {
+        var data = this.state.data;
+        data.module = module;
+
+        var renderUI = UI.done(data, this.getCallbacks());
+        return renderUI;
+    },
+    getCallbacks: function () {
+        return {
+            swapper: this.swapModule,
+            feeder: this.feedModule
+        };
+    },
+    render: function () {
+        var state = this.getCurrentState();
+        var module = this.getModule();
+        var renderUI = this.resolvRenderUI(state, module);
+
+        return renderUI;
+    },
+    done: function (data) {
+        this.setState({
+            state: States.done,
+            data: data
+        });
+    },
+    error: function (xhr, textStatus, error) {
+        this.setState({
+            state: States.error
+        });
+    },
+    retry: function (event) {
+        this.load(history.state.module, history.state.params);
+    },
+    load: function (module, params) {
+        Dispatcher.configure($ReactData.config);
+        var state = this.getModuleState(module, params);
+        state.state = States.loading;
+        this.setState(state, this.fetch);
+    }
+});
+
+module.exports = Engine;
+
+},{"../components/dispatcher.js":1,"../components/http_client.js":6,"../node_modules/html5-history-api/history.js":12}],3:[function(require,module,exports){
+var Dispatcher = require('../components/dispatcher.js');
+
+var HistoryItem = React.createClass({
+    displayName: 'HistoryItem',
+
+    module: 'histories',
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config, $ReactData.params);
+    },
+    propTypes: {
+        id: React.PropTypes.number.isRequired,
+        starting: React.PropTypes.string.isRequired,
+        ending: React.PropTypes.string.isRequired,
+        http_petitions: React.PropTypes.number.isRequired,
+        css_crawled: React.PropTypes.number.isRequired,
+        html_crawled: React.PropTypes.number.isRequired,
+        js_crawled: React.PropTypes.number.isRequired,
+        img_crawled: React.PropTypes.number.isRequired
+    },
+    readableDate: function (rawDate) {
+        var components = rawDate.split(/ /);
+        var date = components[0];
+        var time = components[1];
+
+        var dataComponents = date.split(/-/);
+        var year = dataComponents[0];
+        var month = dataComponents[1];
+        var day = dataComponents[2];
+
+        return day + "/" + month + "/" + year + " " + time;
+    },
+    getData: function () {
+        return {
+            id: this.props.id,
+            module: this.module,
+            target: this.props.name
+        };
+    },
+    dispatch: function (event) {
+        event.preventDefault();
+        Dispatcher.navigate(this.getData(), this.props.swapper);
+        return false;
+    },
+    render: function () {
+        return React.createElement(
+            'tr',
+            null,
+            React.createElement(
+                'td',
+                null,
+                React.createElement(
+                    'h2',
+                    null,
+                    'Exploracion'
+                ),
+                React.createElement(
+                    'h3',
+                    null,
+                    'Iniciada: ',
+                    this.readableDate(this.props.starting)
+                ),
+                React.createElement(
+                    'h3',
+                    null,
+                    'Terminada: ',
+                    this.readableDate(this.props.ending)
+                ),
+                React.createElement(
+                    'h3',
+                    null,
+                    'Peticiones HTTP: ',
+                    this.props.http_petitions
+                )
+            )
+        );
+    }
+});
+
+module.exports = HistoryItem;
+
+},{"../components/dispatcher.js":1}],4:[function(require,module,exports){
+var HistoryItem = require('../components/history_item.js');
+var HistoryLoader = require('../components/history_loader.js');
+var Dispatcher = require('../components/dispatcher.js');
+var Modules = require('../components/modules.js');
+
+var States = {
+    empty: 1,
+    done: 2
+};
+
+var UI = {
+    get: function (react, rows, last) {
+        var callbackSwapper = react.swapper;
+        var state = react.state;
+        var properties = react.props;
+        var target = state.target;
+
+        var renderUI = React.createElement(
+            'div',
+            null,
+            React.createElement(
+                'h1',
+                null,
+                target.name,
+                ' ',
+                React.createElement(
+                    'small',
+                    null,
+                    '#',
+                    state.page
+                )
+            ),
+            React.createElement(
+                'table',
+                null,
+                React.createElement(
+                    'tbody',
+                    null,
+                    rows
+                )
+            ),
+            React.createElement(HistoryLoader, {
+                last: last,
+                page: properties.page,
+                swapper: callbackSwapper })
+        );
+
+        return renderUI;
+    },
+    empty: function (react) {
+        var emptyUI = React.createElement(
+            'tr',
+            null,
+            React.createElement(
+                'td',
+                null,
+                'No hay Historiales para mostrar'
+            )
+        );
+        var renderUI = UI.get(react, emptyUI, true);
+        return renderUI;
+    },
+    done: function (react) {
+        var state = react.state;
+        var list = state.list;
+
+        var rows = list.map(function (item, i) {
+            return React.createElement(HistoryItem, {
+                id: item.id,
+                key: item.id,
+                starting: item.starting,
+                ending: item.ending,
+                http_petitions: item.http_petitions,
+                css_crawled: item.css_crawled,
+                html_crawled: item.html_crawled,
+                js_crawled: item.js_crawled,
+                img_crawled: item.img_crawled });
+        });
+
+        var renderUI = UI.get(react, rows, false);
+        return renderUI;
+    }
+};
+
+var HistoryList = React.createClass({
+    displayName: 'HistoryList',
+
+    propTypes: {
+        list: React.PropTypes.array.isRequired,
+        swapper: React.PropTypes.func.isRequired,
+        target: React.PropTypes.object.isRequired,
+        page: React.PropTypes.number.isRequired
+    },
+    getInitialState: function () {
+        var list = [];
+        var target = [];
+        var page = 1;
+
+        if (typeof this.props.list !== 'undefined') {
+            list = this.props.list;
+        }
+
+        if (typeof this.props.target !== 'undefined') {
+            target = this.props.target;
+        }
+
+        if (typeof this.props.page !== 'undefined') {
+            page = this.props.page;
+        }
+
+        return this.resolvState(list, target, page);
+    },
+    resolvState: function (list, target, page) {
+        var state;
+
+        if (list.length > 0) {
+            state = States.done;
+        } else {
+            state = States.empty;
+        }
+
+        return {
+            state: state,
+            list: list,
+            target: target,
+            page: page
+        };
+    },
+    getParams: function () {
+        var id = this.state.target.id;
+        var target = this.state.target.name;
+        var page = this.state.page;
+
+        return Modules.histories.params(id, target, page);
+    },
+    swapper: function (module, updateParams) {
+        var params = this.getParams();
+
+        for (var i in updateParams) {
+            params[i] = updateParams[i];
+        }
+
+        Dispatcher.navigate(module, params, this.props.swapper);
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = React.createElement(
+            'div',
+            null,
+            'View not set... yet!'
+        );
+
+        switch (this.state.state) {
+            case States.empty:
+                renderUI = this.resolvEmptyUI();
+                break;
+            case States.done:
+                renderUI = this.resolvDoneUI();
+                break;
+        }
+
+        return renderUI;
+    },
+    resolvEmptyUI: function () {
+        var renderUI = UI.empty(this);
+        return renderUI;
+    },
+    resolvDoneUI: function () {
+        var renderUI = UI.done(this);
+        return renderUI;
+    }
+});
+
+module.exports = HistoryList;
+
+},{"../components/dispatcher.js":1,"../components/history_item.js":3,"../components/history_loader.js":5,"../components/modules.js":7}],5:[function(require,module,exports){
+var UI = {
+    get: function (react) {
+        var forwardCallback = react.dispatchForward;
+        var backwardCallback = react.dispatchBackward;
+
+        return React.createElement(
+            'div',
+            null,
+            react.props.page < 2 ? null : React.createElement(
+                'button',
+                { onClick: backwardCallback },
+                'Anterior'
+            ),
+            react.props.last ? null : React.createElement(
+                'button',
+                { onClick: forwardCallback },
+                'Siguiente'
+            )
+        );
+    }
+};
+
+var HistoryLoader = React.createClass({
+    displayName: 'HistoryLoader',
+
+    module: 'histories',
+    propTypes: {
+        swapper: React.PropTypes.func.isRequired,
+        page: React.PropTypes.number.isRequired,
+        last: React.PropTypes.bool.isRequired
+    },
+    getInitialState: function () {
+        return {
+            page: this.props.page
+        };
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    },
+    getModule: function () {
+        return this.module;
+    },
+    getParams: function (page) {
+        var params = {
+            page: this.state.page + page
+        };
+
+        return params;
+    },
+    dispatchBackward: function (event) {
+        event.preventDefault();
+        this.props.swapper(this.getModule(), this.getParams(-1));
+        return false;
+    },
+    dispatchForward: function (event) {
+        event.preventDefault();
+        this.props.swapper(this.getModule(), this.getParams(1));
+        return false;
+    }
+});
+
+module.exports = HistoryLoader;
+
+},{}],6:[function(require,module,exports){
 var HttpClient = function () {
     this.xhr = null;
     this.data = null;
@@ -208,6 +721,12 @@ var HttpClient = function () {
 
     this.getResponse = function () {
         return response;
+    };
+
+    this.abort = function () {
+        if (this.xhr !== null) {
+            this.xhr.abort();
+        }
     };
 
     this.request = function () {
@@ -275,28 +794,39 @@ var HttpClient = function () {
 
 module.exports = HttpClient;
 
-},{}],3:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var Modules = {
     index: {
-        render: function (data, swapper) {
+        render: function (data, callbacks) {
             var TargetList = require('../components/target_list.js');
-            var callback = swapper;
+            var swapper = callbacks.swapper;
             var list = data;
 
-            return React.createElement(TargetList, { list: list, swapper: callback });
+            return React.createElement(TargetList, { list: list, swapper: swapper });
         },
+        params: {},
         name: 'index'
     },
     histories: {
-        render: function (data, swapper) {
-            var callback = swapper;
-            var list = data;
+        render: function (data, callbacks) {
+            var HistoryList = require('../components/history_list.js');
+            var swapper = callbacks.swapper;
+            var feeder = callbacks.feeder;
+            var blob = data;
 
-            return React.createElement(
-                'div',
-                null,
-                'Hola'
-            );
+            return React.createElement(HistoryList, {
+                list: blob.histories,
+                target: blob.target,
+                page: blob.page,
+                feeder: feeder,
+                swapper: swapper });
+        },
+        params: function (id, target, page) {
+            return {
+                id: id,
+                target: target,
+                page: page
+            };
         },
         name: 'histories'
     }
@@ -304,7 +834,7 @@ var Modules = {
 
 module.exports = Modules;
 
-},{"../components/target_list.js":6}],4:[function(require,module,exports){
+},{"../components/history_list.js":4,"../components/target_list.js":10}],8:[function(require,module,exports){
 var Runner = {
     run: function (callback) {
         callback();
@@ -322,8 +852,9 @@ var Runner = {
 
 module.exports = Runner;
 
-},{}],5:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Dispatcher = require('../components/dispatcher.js');
+var Modules = require('../components/modules.js');
 
 var TargetItem = React.createClass({
     displayName: 'TargetItem',
@@ -349,20 +880,20 @@ var TargetItem = React.createClass({
 
         return day + "/" + month + "/" + year;
     },
-    getData: function () {
-        return {
-            id: this.props.id,
-            module: this.module,
-            target: this.props.name
-        };
+    getParams: function () {
+        var id = this.props.id;
+        var target = this.props.name;
+        var page = 1;
+
+        return Modules.histories.params(id, target, page);
     },
     resolvUrl: function () {
-        var url = Dispatcher.resolvModuleUrl(this.getData());
+        var url = Dispatcher.resolvModuleUrl(this.module, this.getParams());
         return url;
     },
     dispatch: function (event) {
         event.preventDefault();
-        Dispatcher.navigate(this.getData(), this.props.swapper);
+        Dispatcher.navigate(this.module, this.getParams(), this.props.swapper);
         return false;
     },
     render: function () {
@@ -418,7 +949,7 @@ var TargetItem = React.createClass({
 
 module.exports = TargetItem;
 
-},{"../components/dispatcher.js":1}],6:[function(require,module,exports){
+},{"../components/dispatcher.js":1,"../components/modules.js":7}],10:[function(require,module,exports){
 var TargetItem = require('../components/target_item.js');
 
 var States = {
@@ -435,11 +966,8 @@ var UI = {
     done: function (data, props) {
         var properties = props;
         var list = data;
-        var older = 0;
 
         var rows = list.map(function (item, i) {
-            older = item.id;
-
             return React.createElement(TargetItem, {
                 swapper: properties.swapper,
                 id: item.id,
@@ -517,214 +1045,43 @@ var TargetList = React.createClass({
 
         return renderUI;
     },
-    resolvPendingUI: function () {
-        var renderUI = UI.pending;
-        return renderUI;
-    },
     resolvEmptyUI: function () {
         var renderUI = UI.empty;
         return renderUI;
     },
     resolvDoneUI: function () {
         var renderUI = UI.done(this.state.list, this.props);
-        this.currentUI = renderUI;
         return renderUI;
     }
 });
 
 module.exports = TargetList;
 
-},{"../components/target_item.js":5}],7:[function(require,module,exports){
-var Runner = require('../components/runner.js');
-var Dispatcher = require('../components/dispatcher.js');
-var HttpClient = require('../components/http_client.js');
+},{"../components/target_item.js":9}],11:[function(require,module,exports){
+require('../node_modules/html5-history-api/history.js');
 
-var States = {
-    loading: 1,
-    error: 2,
-    done: 3
-};
+var Runner = require('../components/runner.js');
+var Engine = require('../components/engine.js');
+var Dispatcher = require('../components/dispatcher.js');
 
 var UI = {
-    loading: React.createElement(
-        'div',
-        null,
-        'C A R G A N D O'
-    ),
-    error: function (retry) {
-        var callback = retry;
+    frontend: function (module, params) {
+        var renderUI = React.createElement(Engine, { module: module, params: params });
 
-        return React.createElement(
-            'div',
-            null,
-            React.createElement(
-                'p',
-                null,
-                'E R R O R'
-            ),
-            React.createElement(
-                'button',
-                { onClick: callback },
-                'REINTENTAR'
-            )
-        );
-    },
-    done: function (data, swapper) {
-        return Dispatcher.resolvModuleUI(data, swapper);
+        return renderUI;
     }
 };
 
-var Frontend = React.createClass({
-    displayName: 'Frontend',
-
-    request: null,
-    propTypes: {
-        module: React.PropTypes.string.isRequired
-    },
-    getInitialState: function () {
-        var state = this.getModuleState(this.props.module);
-        state.state = States.loading;
-
-        return state;
-    },
-    getModuleState: function (module) {
-        var state = {
-            module: module
-        };
-
-        var querystring = Dispatcher.resolvQueryStringData(module);
-
-        if (querystring !== false) {
-            state.querystring = querystring;
-        }
-
-        return state;
-    },
-    componentWillMount: function () {
-        this.fetch();
-        this.historyCallbacks();
-    },
-    historyCallbacks: function () {
-        window.addEventListener("popstate", function (e) {
-            console.debug(event);
-            console.debug(location.href);
-        });
-    },
-    getCurrentState: function () {
-        var state = null;
-
-        if (typeof this.state !== 'undefined') {
-            if (typeof this.state.state !== 'undefined') {
-                state = this.state;
-            }
-        }
-
-        if (state === null) {
-            state = this.getInitialState();
-        }
-
-        return state.state;
-    },
-    swapModule: function (data) {
-        var module = data.module;
-
-        this.load(data);
-    },
-    getModule: function () {
-        var module = this.state.module;
-        return module;
-    },
-    fetch: function () {
-        this.fetchModule(this.state);
-    },
-    fetchModule: function (data) {
-        var api = this.resolvApi(data);
-        var request = new HttpClient();
-
-        request.getJson(api, {
-            error: this.error,
-            done: this.done
-        });
-
-        this.request = request;
-    },
-    resolvApi: function (data) {
-        var api = Dispatcher.resolvModuleApi(data);
-        return api;
-    },
-    resolvRenderUI: function (state, module) {
-        var renderUI = React.createElement(
-            'div',
-            null,
-            'No View Set... yet! '
-        );
-
-        switch (state) {
-            case States.loading:
-                renderUI = this.resolvLoadingUI();
-                break;
-            case States.error:
-                renderUI = this.resolvErrorUI();
-                break;
-            case States.done:
-                renderUI = this.resolvDoneUI(module);
-                break;
-        }
-
-        return renderUI;
-    },
-    resolvLoadingUI: function () {
-        var render = UI.loading;
-        return render;
-    },
-    resolvErrorUI: function () {
-        var renderUI = UI.error(this.retry);
-        return renderUI;
-    },
-    resolvDoneUI: function (module) {
-        var data = this.state.data;
-        data.module = module;
-
-        var renderUI = UI.done(data, this.swapModule);
-        return renderUI;
-    },
-    render: function () {
-        var state = this.getCurrentState();
-        var module = this.getModule();
-        var renderUI = this.resolvRenderUI(state, module);
-
-        return renderUI;
-    },
-    done: function (data) {
-        this.setState({
-            state: States.done,
-            data: data
-        });
-    },
-    error: function (xhr, textStatus, error) {
-        this.setState({
-            state: States.error
-        });
-    },
-    retry: function (event) {
-        this.load();
-    },
-    load: function (data) {
-        Dispatcher.configure($ReactData.config, data);
-        var state = this.getModuleState(data.module);
-        state.state = States.loading;
-        this.setState(state, this.fetch);
-    }
-});
-
 Runner.start(function () {
-    Dispatcher.configure($ReactData.config, $ReactData.params);
-    var module = Dispatcher.resolv();
+    Dispatcher.configure($ReactData.config);
+    var module = $ReactData.params.module;
+    var params = $ReactData.params;
+    delete params.module;
 
-    var frontend = ReactDOM.render(React.createElement(Frontend, { module: module }), document.getElementById('react-root'));
+    ReactDOM.render(UI.frontend(module, params), document.getElementById('react-root'));
 });
 
-},{"../components/dispatcher.js":1,"../components/http_client.js":2,"../components/runner.js":4}],8:[function(require,module,exports){
+},{"../components/dispatcher.js":1,"../components/engine.js":2,"../components/runner.js":8,"../node_modules/html5-history-api/history.js":12}],12:[function(require,module,exports){
 /*!
  * History API JavaScript Library v4.2.7
  *
@@ -1847,4 +2204,4 @@ Runner.start(function () {
   return historyObject;
 });
 
-},{}]},{},[7]);
+},{}]},{},[11]);

@@ -1,2 +1,2 @@
 #!/bin/bash
-nodejs $(which browserify) global.js -t [ babelify --presets [react] ] > main.js
+nodejs $(which browserify) frontend.js -t [ babelify --presets [react] ] > main.js

@@ -1,4 +1,5 @@
 var Dispatcher = require('../components/dispatcher.js');
+var Modules = require('../components/modules.js');
 
 var TargetItem = React.createClass({
     module : 'histories',
@@ -22,20 +23,20 @@ var TargetItem = React.createClass({
 
         return day + "/" + month + "/" + year;
     },
-    getData : function(){
-        return {
-            id : this.props.id,
-            module : this.module,
-            target : this.props.name
-        };
+    getParams : function(){
+        var id = this.props.id;
+        var target = this.props.name;
+        var page = 1;
+
+        return Modules.histories.params(id,target,page);
     },
     resolvUrl : function(){
-        var url = Dispatcher.resolvModuleUrl(this.getData());
+        var url = Dispatcher.resolvModuleUrl(this.module,this.getParams());
         return url;
     },
     dispatch : function(event){
         event.preventDefault();
-        Dispatcher.navigate(this.getData(),this.props.swapper);
+        Dispatcher.navigate(this.module,this.getParams(),this.props.swapper);
         return false;
     },
     render: function() {

@@ -231,6 +231,7 @@ class CrawlerLog extends AppModel {
                 'CrawlerLog.img_crawled',
                 'CrawlerLog.js_crawled',
                 'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
             ],
             'conditions' => [
                 'CrawlerLog.target_id' => $target_id,

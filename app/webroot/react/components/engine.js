@@ -1,4 +1,5 @@
-var Runner = require('../components/runner.js');
+require('../node_modules/html5-history-api/history.js');
+
 var Dispatcher = require('../components/dispatcher.js');
 var HttpClient = require('../components/http_client.js');
 
@@ -22,32 +23,27 @@ var UI = {
             </div>
         );
     },
-    done : function(data,swapper){
-        return Dispatcher.resolvModuleUI(data,swapper);
+    done : function(data,callbacks){
+        return Dispatcher.resolvModuleUI(data, callbacks);
     }
 };
 
-var Frontend = React.createClass({
+var Engine = React.createClass({
     request : null,
     propTypes: {
-        module : React.PropTypes.string.isRequired
+        module : React.PropTypes.string.isRequired,
+        params : React.PropTypes.object.isRequired
     },
     getInitialState : function(){
-        var state = this.getModuleState(this.props.module);
+        var state = this.getModuleState(this.props.module,this.props.params);
         state.state = States.loading;
-
         return state;
     },
-    getModuleState : function(module){
+    getModuleState : function(module,params){
         var state = {
-            module : module
+            module : module,
+            params : params
         };
-
-        var querystring = Dispatcher.resolvQueryStringData(module);
-
-        if(querystring !== false){
-            state.querystring = querystring;
-        }
 
         return state;
     },
@@ -56,10 +52,31 @@ var Frontend = React.createClass({
         this.historyCallbacks();
     },
     historyCallbacks : function(){
-        window.addEventListener("popstate", function(e) {
-            console.debug(event)
-            console.debug(location.href)
+        var self = this;
+
+        window.addEventListener("popstate", function(event) {
+            var module;
+            var params;
+
+            if(history.state === null){
+                return;
+            }
+
+            if(typeof history.state.module === 'undefined'){
+                return;
+            }
+
+            if(typeof history.state.params === 'undefined'){
+                return;
+            }
+
+            module = history.state.module;
+            params = history.state.params;
+
+            self.swapModule(module,params);
         });
+
+        history.pushState(this.getInitialState(),null,location.href);
     },
     getCurrentState : function(){
         var state = null;
@@ -76,31 +93,34 @@ var Frontend = React.createClass({
 
         return state.state;
     },
-    swapModule : function(data){
-        var module = data.module;
-
-        this.load(data);
+    swapModule : function(module,params){
+        this.load(module,params);
     },
     getModule : function(){
         var module = this.state.module;
         return module;
     },
     fetch : function(){
-        this.fetchModule(this.state);
+        this.fetchModule(this.state,this.error,this.done);
     },
-    fetchModule : function(data){
-        var api = this.resolvApi(data);
-        var request = new HttpClient();
+    fetchModule : function(state,errorCallback,doneCallback){
+        var module = state.module;
+        var params = state.params;
+        var api = this.resolvApi(module,params);
 
-        request.getJson(api,{
-            error : this.error,
-            done : this.done
+        if(this.request !== null){
+            this.request.abort();
+        }
+
+        this.request = new HttpClient();
+
+        this.request.getJson(api,{
+            error : errorCallback,
+            done : doneCallback
         });
-
-        this.request = request;
     },
-    resolvApi : function(data){
-        var api = Dispatcher.resolvModuleApi(data);
+    resolvApi : function(module,params){
+        var api = Dispatcher.resolvModuleApi(module,params);
         return api;
     },
     resolvRenderUI : function(state,module){
@@ -132,8 +152,14 @@ var Frontend = React.createClass({
         var data = this.state.data;
         data.module = module;
 
-        var renderUI = UI.done(data,this.swapModule);
+        var renderUI = UI.done(data,this.getCallbacks());
         return renderUI;
+    },
+    getCallbacks : function(){
+        return {
+            swapper : this.swapModule,
+            feeder : this.feedModule
+        };
     },
     render : function(){
         var state = this.getCurrentState();
@@ -154,22 +180,14 @@ var Frontend = React.createClass({
         });
     },
     retry : function(event){
-        this.load();
+        this.load(history.state.module,history.state.params);
     },
-    load : function(data){
-        Dispatcher.configure($ReactData.config,data);
-        var state = this.getModuleState(data.module);
+    load : function(module,params){
+        Dispatcher.configure($ReactData.config);
+        var state = this.getModuleState(module,params);
         state.state = States.loading;
         this.setState(state, this.fetch);
     }
 });
 
-Runner.start(function(){
-    Dispatcher.configure($ReactData.config,$ReactData.params);
-    var module = Dispatcher.resolv();
-
-    var frontend = ReactDOM.render(
-        <Frontend module={module} />,
-        document.getElementById('react-root')
-    );
-});
+module.exports = Engine

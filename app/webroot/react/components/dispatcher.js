@@ -1,18 +1,21 @@
 require('../node_modules/html5-history-api/history.js');
+
 var Modules = require('../components/modules.js');
 
 var Dispatcher = {
     config : null,
-    params : null,
-    configure : function(config,params){
+    configure : function(config){
         this.config = config;
-        this.params = params;
     },
-    navigate : function(data,swapper){
-        var url = this.resolvModuleUrl(data);
-        history.pushState(data,null,url);
+    navigate : function(module,params,sweeper){
+        var data = {
+            module : module,
+            params : params
+        };
 
-        swapper(data);
+        var url = this.resolvModuleUrl(module,params);
+        history.pushState(data,null,url);
+        sweeper(module,params);
     },
     getSlug : function(string){
         var slug = string
@@ -22,16 +25,7 @@ var Dispatcher = {
 
         return slug;
     },
-    resolv : function(){
-        var module = Modules.index.name;
-
-        if(typeof this.params.module !== 'undefined'){
-            module = this.params.module;
-        }
-
-        return module;
-    },
-    resolvModuleUI : function(data,swapper){
+    resolvModuleUI : function(data,swapper,feeder){
         var render = ( <div>No View Set.. yet!</div> );
         var module = data.module;
 
@@ -42,9 +36,8 @@ var Dispatcher = {
         render = Modules[module].render(data,swapper);
         return render;
     },
-    resolvModuleApi : function(data){
+    resolvModuleApi : function(module,params){
         var api = '/api-config-not-set-yet.json'
-        var module = data.module;
 
         if(typeof this.config === 'undefined'){
             return api;
@@ -59,17 +52,11 @@ var Dispatcher = {
         }
 
         api = this.config.api[module];
-        api = api + this.getQueryString(data);
+        api = api + this.resolvModuleQueryString(module,params);
         return api;
     },
-    resolvModuleUrl : function(data){
+    resolvModuleUrl : function(module,params){
         var url = '/url-config-not-set-yet.html'
-
-        if(typeof data.module === 'undefined'){
-            return url;
-        }
-
-        var module = data.module;
 
         if(typeof this.config === 'undefined'){
             return url;
@@ -83,11 +70,11 @@ var Dispatcher = {
             return url;
         }
 
-        url = this.getUrlReplacement(this.config.url[module],data);
+        url = this.getUrlReplacement(this.config.url[module],params);
         return url;
     },
-    resolvModuleQueryString : function(module){
-        var querystringdata = this.resolvQueryStringData(module);
+    resolvModuleQueryString : function(module,params){
+        var querystringdata = this.resolvQueryStringData(module,params);
 
         if(querystringdata === false){
             return false;
@@ -102,7 +89,7 @@ var Dispatcher = {
 
         return querystring.substring(0, querystring.length - 1);
     },
-    resolvQueryStringData : function(module){
+    resolvQueryStringData : function(module,params){
         var querystring = false;
 
         if(typeof this.config === 'undefined'){
@@ -122,34 +109,20 @@ var Dispatcher = {
         for(var name in this.config.querystring[module]){
             var param = this.config.querystring[module][name];
 
-            if(typeof this.params[param] !== 'undefined'){
-                querystring[name] = this.params[param];
+            if(typeof params[param] !== 'undefined'){
+                querystring[name] = params[param];
             }
         }
 
         return querystring;
     },
-    getQueryString : function(data){
-        if(typeof data.querystring === 'undefined'){
-            return '';
-        }
-
-        var querystring = '?';
-
-        for(var param in data.querystring){
-            var value = data.querystring[param];
-            querystring += param + "=" + value + "&";
-        }
-
-        return querystring.substring(0, querystring.length - 1);
-    },
-    getUrlReplacement : function(rawUrl,data){
+    getUrlReplacement : function(rawUrl,params){
          var res = rawUrl.match(/(%.*?%)/g);
          var url = rawUrl;
 
          for(var i in res){
              var token = res[i].replace(/%/g,'');
-             var replacement = this.getPathReplacement(token,data);
+             var replacement = this.getPathReplacement(token,params);
              var needle = "%" + token + "%";
 
              url = url.replace(needle,replacement);
@@ -157,11 +130,11 @@ var Dispatcher = {
 
          return url;
     },
-    getPathReplacement : function(token,data){
+    getPathReplacement : function(token,params){
         var path = 'path-not-set-yet';
 
-        if(typeof data[token] !== 'undefined'){
-            path = this.getSlug(String(data[token]));
+        if(typeof params[token] !== 'undefined'){
+            path = this.getSlug(String(params[token]));
         }
 
         return path;

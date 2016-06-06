@@ -7,15 +7,25 @@ var HistoryItem = React.createClass({
     },
     propTypes: {
         id : React.PropTypes.number.isRequired,
-        url : React.PropTypes.string.isRequired,
+        starting : React.PropTypes.string.isRequired,
+        ending : React.PropTypes.string.isRequired,
+        http_petitions : React.PropTypes.number.isRequired,
+        css_crawled : React.PropTypes.number.isRequired,
+        html_crawled : React.PropTypes.number.isRequired,
+        js_crawled : React.PropTypes.number.isRequired,
+        img_crawled : React.PropTypes.number.isRequired
     },
     readableDate : function(rawDate){
-        var components = rawDate.split(/-/);
-        var year = components[0];
-        var month = components[1];
-        var day = components[2];
+        var components = rawDate.split(/ /);
+        var date = components[0];
+        var time = components[1];
 
-        return day + "/" + month + "/" + year;
+        var dataComponents = date.split(/-/);
+        var year = dataComponents[0];
+        var month = dataComponents[1];
+        var day = dataComponents[2];
+
+        return day + "/" + month + "/" + year + " " + time;
     },
     getData : function(){
         return {
@@ -23,10 +33,6 @@ var HistoryItem = React.createClass({
             module : this.module,
             target : this.props.name
         };
-    },
-    resolvUrl : function(){
-        var url = Dispatcher.resolvModuleUrl(this.getData());
-        return url;
     },
     dispatch : function(event){
         event.preventDefault();
@@ -37,14 +43,14 @@ var HistoryItem = React.createClass({
         return (
             <tr>
                 <td>
-                    <h2><a onClick={this.dispatch} href={this.resolvUrl()}>{this.props.name}</a></h2>
-                    <h3>URL: <a href={this.props.url} target="_blank">{this.props.url}</a> <i>({this.props.histories} historiales)</i></h3>
-                    <h3>Primera Exploracion: {this.readableDate(this.props.first_crawl)}</h3>
-                    <h3>Ultima vez Explorado: {this.readableDate(this.props.last_crawl)}</h3>
+                    <h2>Exploracion</h2>
+                    <h3>Iniciada: {this.readableDate(this.props.starting)}</h3>
+                    <h3>Terminada: {this.readableDate(this.props.ending)}</h3>
+                    <h3>Peticiones HTTP: {this.props.http_petitions}</h3>
                 </td>
             </tr>
         );
     },
 });
 
-module.exports = TargetItem
+module.exports = HistoryItem;

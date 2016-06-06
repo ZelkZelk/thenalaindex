@@ -160,7 +160,7 @@ class WebserviceController extends Controller {
                 throw new BadRequestException("Debe especificarse parametro $key");
             }
             
-            list($newValue,$typeResult) = $this->analyzeType($value,$type);
+            list($newValue,$typeResult) = $this->analyzeType($data,$value,$type);
             
             if($typeResult == false){
                 throw new BadRequestException("Parametro $key debe ser $type");
@@ -174,12 +174,12 @@ class WebserviceController extends Controller {
     
     /** Analiza el tipo de dato y devuelve un flag que determina si es correcto o no */
     
-    private function analyzeType($value,$type){
+    private function analyzeType($data,$value,$type){
         $result = true;
         
         switch($type){
             case 'int':
-                $result = $this->analyzeInt($value);
+                $result = $this->analyzeInt($data,$value);
                 $value = (int) $value;
                 break;
         }
@@ -189,7 +189,22 @@ class WebserviceController extends Controller {
     
     /** Analiza si el valor encierra un entero valido */
     
-    private function analyzeInt($value){
+    private function analyzeInt($data,$value){
+        if(isset($data['range'])){
+            $min = $data['range'][0];
+            $max = $data['range'][1];
+            
+            if(is_null($min) === false && $value < $min){
+                return false;
+            }
+            
+            if(is_null($max) === false && $value > $max){
+                return false;
+            }
+            
+//            return false;
+        }
+        
         return preg_match('/^(\d)+$/',$value);
     }
     

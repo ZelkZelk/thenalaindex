@@ -1,7 +1,7 @@
 var SingleAbmRow = require('./single_abm_row.js');
 
 
-var SingleAbmTable = React.createClass({    
+var SingleAbmTable = React.createClass({
     protTypes: {
         icon : React.PropTypes.string.isRequired,
         title : React.PropTypes.string.isRequired,
@@ -22,13 +22,13 @@ var SingleAbmTable = React.createClass({
         this.cleanError();
         this.cleanXhrContent();
         this.cleanXhrPush();
-        
+
         this.setState({
             'content' : this.contentStates.idle,
             'push' : this.pushStates.idle,
             'data' : []
         });
-        
+
         this.fetch();
     },
     contentStates : {
@@ -51,12 +51,12 @@ var SingleAbmTable = React.createClass({
     },
     resolvError : function(){
         var error = "";
-        
+
         if(this.error !== null){
             error =  (
                 <div className="alert alert-danger">
                     <strong>Error! </strong>
-                    {this.error}    
+                    {this.error}
                 </div>
             );
         }
@@ -70,56 +70,56 @@ var SingleAbmTable = React.createClass({
         if(this.pushButton == null){
             return;
         }
-        
+
         if(this.xhrAdd != null){
             return;
         }
-        
+
         this.pushSend();
     },
     pushIdle : function(data){
         var content = this.contentStates.empty;
-        
+
         if(this.hasData(data)){
             content = this.contentStates.filled;
         }
-        
+
         this.setState({
             'content' : content,
             'push' : this.pushStates.idle,
             'data' : data
         });
     },
-    pushFail : function(message){        
+    pushFail : function(message){
         this.setState({
             'push' : this.pushStates.failed,
             'message' : message
         });
     },
-    pushSend : function(){        
+    pushSend : function(){
         this.cleanError();
-        
+
         this.setState({
             'push' : this.pushStates.sending
         });
-        
+
         var self = this;
-        
+
         this.sleepPush = setTimeout(function(){
-            self.pushApi();     
+            self.pushApi();
         },this.apiLag);
     },
     cleanSleepPush : function(){
         if(this.sleepPush != null){
             clearTimeout(this.sleepPush);
         }
-        
+
         this.sleepContent = null;
     },
     sleepPush : null,
     readEnv : function(){
         var env = {};
-        
+
         if(typeof this.props.env !== 'undefined'){
             for(var i in this.props.env){
                 var v = this.props.env[i];
@@ -129,13 +129,13 @@ var SingleAbmTable = React.createClass({
                 }
             }
         }
-        
+
         return env;
     },
     pushApi : function(){
         var self = this;
         var envData = this.readEnv()
-        
+
         this.xhrPush = $.ajax({
             url : this.props.pushApi,
             method : 'POST',
@@ -145,15 +145,15 @@ var SingleAbmTable = React.createClass({
             }
         }).success(function(data){
             self.pushAjaxSuccess(data);
-        }).error(function(event){            
+        }).error(function(event){
             self.pushAjaxError(event);
-        }).always(function(){            
+        }).always(function(){
             self.xhrPush = null;
         });
     },
     pushAjaxSuccess : function(data){
         var newData = this.state.data;
-        
+
         if(this.hasData(data)){
             for(var id in data){
                 var value = data[id];
@@ -161,11 +161,11 @@ var SingleAbmTable = React.createClass({
                 break;
             }
         }
-        
+
         this.input.value = "";
         this.pushIdle(newData);
     },
-    pushAjaxError : function(event){        
+    pushAjaxError : function(event){
         switch(event.status){
             case 406:
                 this.pushFail(event.responseText);
@@ -180,38 +180,38 @@ var SingleAbmTable = React.createClass({
         if(this.sleepContent != null){
             clearTimeout(this.sleepContent);
         }
-        
+
         this.sleepContent = null;
     },
     sleepContent : null,
     fetch : function(){
         this.cleanError();
-        
+
         this.setState({
             'content' : this.contentStates.fetching
         });
-        
+
         var self = this;
         this.cleanSleepContent();
-        
+
         this.sleepContent = setTimeout(function(){
             self.feedApi()
         },this.apiLag);
-        
+
     },
     xhrContent : null,
-    cleanXhrContent : function(){        
+    cleanXhrContent : function(){
         if(this.xhrContent !== null){
             this.xhrContent.abort();
-        }       
-        
+        }
+
         this.xhrContent = null;
     },
-    cleanXhrPush : function(){        
+    cleanXhrPush : function(){
         if(this.xhrPush !== null){
             this.xhrPush.abort();
-        }            
-        
+        }
+
         this.xhrPush = null;
     },
     contentHit : function(){
@@ -222,7 +222,7 @@ var SingleAbmTable = React.createClass({
         var self = this;
         var envData = this.readEnv()
         self.contentHit();
-        
+
         this.xhrContent = $.ajax({
             url : this.props.feedApi,
             type : 'post',
@@ -233,25 +233,25 @@ var SingleAbmTable = React.createClass({
             self.feedApiSuccess(data);
         }).error(function(event){
             self.feedApiError(event);
-        }).always(function(){            
+        }).always(function(){
             self.xhrContent = null;
         });
     },
-    feedApiError : function(event){        
+    feedApiError : function(event){
         this.setError("Falló la comunicación con el Servidor");
         this.empty();
     },
     hasData : function(data){
         var hasData = false;
-        
+
         /* Una forma poco ortodoxa de saber si hay algo en un array, pero
          * funciona tambien para singletons. */
-        
+
         for(var i in data){
             hasData = true;
             break;
         }
-        
+
         return hasData;
     },
     feedApiSuccess : function(data){
@@ -281,29 +281,29 @@ var SingleAbmTable = React.createClass({
     resolvContent : function(){
         var content = "";
         var state = this.contentStates.idle;
-        
+
         if(this.state !== null){
             if(typeof this.state.content !== 'undefined'){
                 state = this.state.content;
             }
         }
-        
+
         switch(state){
-            case this.contentStates.fetching: 
+            case this.contentStates.fetching:
                 content = this.fetchingContent();
                 break;
-            case this.contentStates.empty: 
+            case this.contentStates.empty:
                 content = this.emptyContent();
                 break;
-            case this.contentStates.filled: 
+            case this.contentStates.filled:
                 content = this.filledContent();
                 break;
         }
-        
+
         return content;
     },
     fetchingContent : function(){
-        return (            
+        return (
             <div className="portlet-body">
                 <div id="single_abm_fetch" className="row">
                     <div className="col-md-12" style={{ padding:"40px 0px 40px 0px", textAlign:'center' }}>
@@ -311,10 +311,10 @@ var SingleAbmTable = React.createClass({
                     </div>
                 </div>
             </div>
-        );        
+        );
     },
     emptyContent : function(){
-        return (            
+        return (
             <div className="portlet-body">
                 <div id="single_abm_empty" className="row">
                     <div className="col-md-12">
@@ -326,19 +326,19 @@ var SingleAbmTable = React.createClass({
     },
     getRows : function(){
         var data = this.state.data;
-        
-        return <tbody> 
+
+        return <tbody>
                     {data.map((value,i) => {
-                            return <SingleAbmRow 
+                            return <SingleAbmRow
                                         dropApi={this.props.dropApi}
                                         editApi={this.props.editApi}
                                         dropCallback={this.dropCallback}
                                         editCallback={this.editCallback}
-                                        key={i} 
-                                        id={i} 
+                                        key={i}
+                                        id={i}
                                         env={this.readEnv()}
                                         value={value} />;
-                    })} 
+                    })}
                 </tbody>;
     },
     dropErrorCallback : function(message){
@@ -349,21 +349,21 @@ var SingleAbmTable = React.createClass({
         var push = this.pushStates.idle;
         var content = this.contentStates.filled;
         var newData = [];
-        
+
         if(typeof this.state.data !== null){
             newData = this.state.data;
         }
-        
+
         newData[id] = value;
-        
+
         if( ! this.hasData(newData)){
             content = this.contentStates.empty;
         }
-        
+
         if(typeof this.state.push !== null){
             push = this.state.push;
         }
-        
+
         this.setState({
             'content' : content,
             'push' : push,
@@ -373,15 +373,15 @@ var SingleAbmTable = React.createClass({
     dropCallback : function(newData){
         var push = this.pushStates.idle;
         var content = this.contentStates.filled;
-        
+
         if( ! this.hasData(newData)){
             content = this.contentStates.empty;
         }
-        
+
         if(typeof this.state.push !== null){
             push = this.state.push;
         }
-        
+
         this.setState({
             'content' : content,
             'push' : push,
@@ -390,7 +390,7 @@ var SingleAbmTable = React.createClass({
     },
     filledContent : function(){
         var rows = this.getRows();
-        
+
         return (
             <div id="single_abm_fill">
                 <div className="portlet-body">
@@ -404,13 +404,13 @@ var SingleAbmTable = React.createClass({
     resolvPushUI : function(){
         var state = this.pushStates.idle;
         var ui = "";
-        
+
         if(this.state !== null){
             if(typeof this.state.push !== 'undefined'){
                 state = this.state.push;
             }
         }
-        
+
         switch(state){
             case this.pushStates.idle:
                 ui = this.pushIdleUI();
@@ -420,13 +420,13 @@ var SingleAbmTable = React.createClass({
                 break;
             case this.pushStates.failed:
                 ui = this.pushFailedUI();
-                break;                
+                break;
         }
-        
+
         return ui;
     },
     pushButtonUI : function(){
-        return (        
+        return (
             <div className="col-md-2">
                 <div className="input-icon right">
                     <button ref={(ref) => this.pushButton = ref } onClick={this.push.bind(null,null)} className="btn blue-hoki" style={{ width : 100 + '%' }} id="list_btn"><i className="fa fa-plus"></i></button>
@@ -438,7 +438,7 @@ var SingleAbmTable = React.createClass({
         return (
             <div className="row">
                 {this.pushInputUI()}
-        
+
                 <div className="col-md-2">
                     <div className="input-icon right">
                         <center>
@@ -459,7 +459,7 @@ var SingleAbmTable = React.createClass({
     },
     pushIdleUI : function(){
         return (
-            <div className="row">        
+            <div className="row">
                 {this.pushInputUI()}
                 {this.pushButtonUI()}
             </div>
@@ -470,7 +470,7 @@ var SingleAbmTable = React.createClass({
             disabled : '',
             className : 'input-icon right'
         };
-        
+
         if(this.state !== null){
             switch(this.state.push){
                 case this.pushStates.idle:
@@ -484,12 +484,12 @@ var SingleAbmTable = React.createClass({
                     break;
             }
         }
-        
+
         return extras;
     },
     pushInputUI : function(){
         var extras = this.resolvPushExtras();
-        
+
         return (
             <div className="col-md-10">
                 <div className={extras.className}>
@@ -500,15 +500,15 @@ var SingleAbmTable = React.createClass({
             </div>
         );
     },
-    render : function(){        
+    render : function(){
         var content = this.resolvContent()
         var error = this.resolvError()
         var pushUI = this.resolvPushUI()
-                
+
         return (
             <div className="row">
                 <div className="col-md-12">
-                    {error}            
+                    {error}
                     <div className="portlet light form-group">
                         <div className="portlet-title">
                             <div className="caption">
