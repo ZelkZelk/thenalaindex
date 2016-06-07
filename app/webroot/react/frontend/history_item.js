@@ -1,4 +1,4 @@
-var Dispatcher = require('../components/dispatcher.js');
+var Dispatcher = require('./dispatcher.js');
 
 var HistoryItem = React.createClass({
     module : 'histories',

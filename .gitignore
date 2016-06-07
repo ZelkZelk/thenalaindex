@@ -3,3 +3,5 @@ app/Config/*
 app/tmp
 app/tmp/*
 nbproject
+app/webroot/sass
+app/webroot/**/make.sh

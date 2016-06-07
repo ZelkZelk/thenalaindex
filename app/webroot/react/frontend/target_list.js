@@ -1,4 +1,4 @@
-var TargetItem = require('../components/target_item.js');
+var TargetItem = require('./target_item.js');
 
 var States = {
     empty : 1,

@@ -1,8 +1,7 @@
 var Modules = {
     index : {
-        render : function(data,callbacks){
-            var TargetList = require('../components/target_list.js');
-            var swapper = callbacks.swapper;
+        render : function(data,swapper){
+            var TargetList = require('./target_list.js');
             var list = data;
 
             return (
@@ -15,10 +14,8 @@ var Modules = {
         name : 'index'
     },
     histories: {
-        render : function(data,callbacks){
-            var HistoryList = require('../components/history_list.js');
-            var swapper = callbacks.swapper;
-            var feeder = callbacks.feeder;
+        render : function(data,swapper){
+            var HistoryList = require('./history_list.js');
             var blob = data;
 
             return (
@@ -26,7 +23,6 @@ var Modules = {
                     list={blob.histories}
                     target={blob.target}
                     page={blob.page}
-                    feeder={feeder}
                     swapper={swapper} />
             );
         },

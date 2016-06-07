@@ -1,15 +1,15 @@
-var LinkList = require('../components/link_list.js');
+var LinkList = require('./link_list.js');
 var Runner = require('../components/runner.js');
-var SingleAbmTable = require('../components/single_abm_table.js');
+var SingleAbmTable = require('./single_abm_table.js');
 
 var NotificationsEmail = {
     onLinkClick : function(data,e){
         e.preventDefault();
-        
-        var title = <span>{data.label} <small>{data.sublabel}</small></span>  
-                
+
+        var title = <span>{data.label} <small>{data.sublabel}</small></span>
+
         var table = ReactDOM.render(
-            <SingleAbmTable 
+            <SingleAbmTable
                 env={data}
                 field={$ReactData.abm.field}
                 fieldLabel={$ReactData.abm.fieldLabel}
@@ -28,11 +28,11 @@ var NotificationsEmail = {
     }
 };
 
-Runner.start(function(){    
+Runner.start(function(){
     for(var i in $ReactData.links){
         $ReactData.links[i].click = NotificationsEmail.onLinkClick;
     }
-    
+
     ReactDOM.render(
         <div>
             <LinkList links={$ReactData.links} />

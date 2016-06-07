@@ -1,8 +1,8 @@
 require('../node_modules/html5-history-api/history.js');
 
 var Runner = require('../components/runner.js');
-var Engine = require('../components/engine.js');
-var Dispatcher = require('../components/dispatcher.js');
+var Dispatcher = require('./dispatcher.js');
+var Engine = require('./engine.js');
 
 var UI = {
     frontend : function(module,params){

@@ -1,7 +1,7 @@
-var HistoryItem = require('../components/history_item.js');
-var HistoryLoader = require('../components/history_loader.js');
-var Dispatcher = require('../components/dispatcher.js');
-var Modules = require('../components/modules.js');
+var HistoryLoader = require('./history_loader.js');
+var HistoryItem = require('./history_item.js');
+var Dispatcher = require('./dispatcher.js');
+var Modules = require('./modules.js');
 
 var States = {
     empty : 1,
@@ -108,7 +108,7 @@ var HistoryList = React.createClass({
         var id = this.state.target.id;
         var target = this.state.target.name;
         var page = this.state.page;
-        
+
         return Modules.histories.params(id,target,page);
     },
     swapper : function(module,updateParams){

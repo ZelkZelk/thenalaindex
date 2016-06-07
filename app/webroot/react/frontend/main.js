@@ -1,7 +1,134 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var HttpClient = function () {
+    this.xhr = null;
+    this.data = null;
+    this.url = null;
+    this.dataType = null;
+    this.type = null;
+    this.doneCallback = null;
+    this.errorCallback = null;
+    this.alwaysCallback = null;
+    this.response = null;
+    this.error = false;
+
+    this.getJson = function (url, callbacks) {
+        this.data = [];
+        this.url = url;
+        this.type = 'GET';
+        this.dataType = 'json';
+
+        if (typeof callbacks.error !== 'undefined') {
+            this.errorCallback = callbacks.error;
+        }
+
+        if (typeof callbacks.done !== 'undefined') {
+            this.doneCallback = callbacks.done;
+        }
+
+        if (typeof callbacks.always !== 'undefined') {
+            this.alwaysCallback = callbacks.always;
+        }
+
+        this.request();
+    };
+
+    this.getResponse = function () {
+        return response;
+    };
+
+    this.abort = function () {
+        if (this.xhr !== null) {
+            this.xhr.abort();
+        }
+    };
+
+    this.request = function () {
+        var xhr = new XMLHttpRequest();
+        var self = this;
+        this.error = true;
+
+        xhr.open(this.type, encodeURI(this.url));
+        xhr.onload = function () {
+            if (this.status === 200) {
+                var data = self.getRequestData();
+                self.response = data;
+                self.error = false;
+            }
+
+            var error = self.hasError();
+
+            if (error !== false) {
+                if (self.errorCallback !== null) {
+                    self.errorCallback(xhr, xhr.statusText, error);
+                }
+            } else {
+                if (self.doneCallback !== null) {
+                    self.doneCallback(self.response);
+                }
+            }
+
+            if (self.alwaysCallback !== null) {
+                self.alwaysCallback();
+            }
+        };
+
+        this.xhr = xhr;
+        xhr.send();
+    };
+
+    this.getRequestData = function () {
+        var data;
+
+        switch (this.dataType) {
+            case 'json':
+                data = this.jsonParse(this.xhr.responseText);
+                break;
+            default:
+                data = this.xhr.responseText;
+                break;
+        }
+
+        return data;
+    };
+
+    this.jsonParse = function (json) {
+        try {
+            return JSON.parse(json);
+        } catch (e) {
+            this.error = e;
+            return null;
+        }
+    };
+
+    this.hasError = function () {
+        return this.error;
+    };
+};
+
+module.exports = HttpClient;
+
+},{}],2:[function(require,module,exports){
+var Runner = {
+    run: function (callback) {
+        callback();
+    },
+    start: function (callback) {
+        const loadedStates = ['complete', 'loaded', 'interactive'];
+
+        if (loadedStates.includes(document.readyState) && document.body) {
+            callback();
+        } else {
+            window.addEventListener('DOMContentLoaded', callback, false);
+        }
+    }
+};
+
+module.exports = Runner;
+
+},{}],3:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
-var Modules = require('../components/modules.js');
+var Modules = require('./modules.js');
 
 var Dispatcher = {
     config: null,
@@ -23,7 +150,7 @@ var Dispatcher = {
 
         return slug;
     },
-    resolvModuleUI: function (data, swapper, feeder) {
+    resolvModuleUI: function (data, swapper) {
         var render = React.createElement(
             'div',
             null,
@@ -145,11 +272,11 @@ var Dispatcher = {
 
 module.exports = Dispatcher;
 
-},{"../components/modules.js":7,"../node_modules/html5-history-api/history.js":12}],2:[function(require,module,exports){
+},{"../node_modules/html5-history-api/history.js":12,"./modules.js":9}],4:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
-var Dispatcher = require('../components/dispatcher.js');
 var HttpClient = require('../components/http_client.js');
+var Dispatcher = require('./dispatcher.js');
 
 var States = {
     loading: 1,
@@ -181,8 +308,8 @@ var UI = {
             )
         );
     },
-    done: function (data, callbacks) {
-        return Dispatcher.resolvModuleUI(data, callbacks);
+    done: function (data, swapper) {
+        return Dispatcher.resolvModuleUI(data, swapper);
     }
 };
 
@@ -316,14 +443,8 @@ var Engine = React.createClass({
         var data = this.state.data;
         data.module = module;
 
-        var renderUI = UI.done(data, this.getCallbacks());
+        var renderUI = UI.done(data, this.swapModule);
         return renderUI;
-    },
-    getCallbacks: function () {
-        return {
-            swapper: this.swapModule,
-            feeder: this.feedModule
-        };
     },
     render: function () {
         var state = this.getCurrentState();
@@ -356,8 +477,32 @@ var Engine = React.createClass({
 
 module.exports = Engine;
 
-},{"../components/dispatcher.js":1,"../components/http_client.js":6,"../node_modules/html5-history-api/history.js":12}],3:[function(require,module,exports){
-var Dispatcher = require('../components/dispatcher.js');
+},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":12,"./dispatcher.js":3}],5:[function(require,module,exports){
+require('../node_modules/html5-history-api/history.js');
+
+var Runner = require('../components/runner.js');
+var Dispatcher = require('./dispatcher.js');
+var Engine = require('./engine.js');
+
+var UI = {
+    frontend: function (module, params) {
+        var renderUI = React.createElement(Engine, { module: module, params: params });
+
+        return renderUI;
+    }
+};
+
+Runner.start(function () {
+    Dispatcher.configure($ReactData.config);
+    var module = $ReactData.params.module;
+    var params = $ReactData.params;
+    delete params.module;
+
+    ReactDOM.render(UI.frontend(module, params), document.getElementById('react-root'));
+});
+
+},{"../components/runner.js":2,"../node_modules/html5-history-api/history.js":12,"./dispatcher.js":3,"./engine.js":4}],6:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
 
 var HistoryItem = React.createClass({
     displayName: 'HistoryItem',
@@ -437,11 +582,11 @@ var HistoryItem = React.createClass({
 
 module.exports = HistoryItem;
 
-},{"../components/dispatcher.js":1}],4:[function(require,module,exports){
-var HistoryItem = require('../components/history_item.js');
-var HistoryLoader = require('../components/history_loader.js');
-var Dispatcher = require('../components/dispatcher.js');
-var Modules = require('../components/modules.js');
+},{"./dispatcher.js":3}],7:[function(require,module,exports){
+var HistoryLoader = require('./history_loader.js');
+var HistoryItem = require('./history_item.js');
+var Dispatcher = require('./dispatcher.js');
+var Modules = require('./modules.js');
 
 var States = {
     empty: 1,
@@ -616,7 +761,7 @@ var HistoryList = React.createClass({
 
 module.exports = HistoryList;
 
-},{"../components/dispatcher.js":1,"../components/history_item.js":3,"../components/history_loader.js":5,"../components/modules.js":7}],5:[function(require,module,exports){
+},{"./dispatcher.js":3,"./history_item.js":6,"./history_loader.js":8,"./modules.js":9}],8:[function(require,module,exports){
 var UI = {
     get: function (react) {
         var forwardCallback = react.dispatchForward;
@@ -685,121 +830,11 @@ var HistoryLoader = React.createClass({
 
 module.exports = HistoryLoader;
 
-},{}],6:[function(require,module,exports){
-var HttpClient = function () {
-    this.xhr = null;
-    this.data = null;
-    this.url = null;
-    this.dataType = null;
-    this.type = null;
-    this.doneCallback = null;
-    this.errorCallback = null;
-    this.alwaysCallback = null;
-    this.response = null;
-    this.error = false;
-
-    this.getJson = function (url, callbacks) {
-        this.data = [];
-        this.url = url;
-        this.type = 'GET';
-        this.dataType = 'json';
-
-        if (typeof callbacks.error !== 'undefined') {
-            this.errorCallback = callbacks.error;
-        }
-
-        if (typeof callbacks.done !== 'undefined') {
-            this.doneCallback = callbacks.done;
-        }
-
-        if (typeof callbacks.always !== 'undefined') {
-            this.alwaysCallback = callbacks.always;
-        }
-
-        this.request();
-    };
-
-    this.getResponse = function () {
-        return response;
-    };
-
-    this.abort = function () {
-        if (this.xhr !== null) {
-            this.xhr.abort();
-        }
-    };
-
-    this.request = function () {
-        var xhr = new XMLHttpRequest();
-        var self = this;
-        this.error = true;
-
-        xhr.open(this.type, encodeURI(this.url));
-        xhr.onload = function () {
-            if (this.status === 200) {
-                var data = self.getRequestData();
-                self.response = data;
-                self.error = false;
-            }
-
-            var error = self.hasError();
-
-            if (error !== false) {
-                if (self.errorCallback !== null) {
-                    self.errorCallback(xhr, xhr.statusText, error);
-                }
-            } else {
-                if (self.doneCallback !== null) {
-                    self.doneCallback(self.response);
-                }
-            }
-
-            if (self.alwaysCallback !== null) {
-                self.alwaysCallback();
-            }
-        };
-
-        this.xhr = xhr;
-        xhr.send();
-    };
-
-    this.getRequestData = function () {
-        var data;
-
-        switch (this.dataType) {
-            case 'json':
-                data = this.jsonParse(this.xhr.responseText);
-                break;
-            default:
-                data = this.xhr.responseText;
-                break;
-        }
-
-        return data;
-    };
-
-    this.jsonParse = function (json) {
-        try {
-            return JSON.parse(json);
-        } catch (e) {
-            this.error = e;
-            return null;
-        }
-    };
-
-    this.hasError = function () {
-        return this.error;
-    };
-};
-
-module.exports = HttpClient;
-
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Modules = {
     index: {
-        render: function (data, callbacks) {
-            var TargetList = require('../components/target_list.js');
-            var swapper = callbacks.swapper;
+        render: function (data, swapper) {
+            var TargetList = require('./target_list.js');
             var list = data;
 
             return React.createElement(TargetList, { list: list, swapper: swapper });
@@ -808,17 +843,14 @@ var Modules = {
         name: 'index'
     },
     histories: {
-        render: function (data, callbacks) {
-            var HistoryList = require('../components/history_list.js');
-            var swapper = callbacks.swapper;
-            var feeder = callbacks.feeder;
+        render: function (data, swapper) {
+            var HistoryList = require('./history_list.js');
             var blob = data;
 
             return React.createElement(HistoryList, {
                 list: blob.histories,
                 target: blob.target,
                 page: blob.page,
-                feeder: feeder,
                 swapper: swapper });
         },
         params: function (id, target, page) {
@@ -834,27 +866,9 @@ var Modules = {
 
 module.exports = Modules;
 
-},{"../components/history_list.js":4,"../components/target_list.js":10}],8:[function(require,module,exports){
-var Runner = {
-    run: function (callback) {
-        callback();
-    },
-    start: function (callback) {
-        const loadedStates = ['complete', 'loaded', 'interactive'];
-
-        if (loadedStates.includes(document.readyState) && document.body) {
-            callback();
-        } else {
-            window.addEventListener('DOMContentLoaded', callback, false);
-        }
-    }
-};
-
-module.exports = Runner;
-
-},{}],9:[function(require,module,exports){
-var Dispatcher = require('../components/dispatcher.js');
-var Modules = require('../components/modules.js');
+},{"./history_list.js":7,"./target_list.js":11}],10:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var Modules = require('./modules.js');
 
 var TargetItem = React.createClass({
     displayName: 'TargetItem',
@@ -949,8 +963,8 @@ var TargetItem = React.createClass({
 
 module.exports = TargetItem;
 
-},{"../components/dispatcher.js":1,"../components/modules.js":7}],10:[function(require,module,exports){
-var TargetItem = require('../components/target_item.js');
+},{"./dispatcher.js":3,"./modules.js":9}],11:[function(require,module,exports){
+var TargetItem = require('./target_item.js');
 
 var States = {
     empty: 1,
@@ -1057,31 +1071,7 @@ var TargetList = React.createClass({
 
 module.exports = TargetList;
 
-},{"../components/target_item.js":9}],11:[function(require,module,exports){
-require('../node_modules/html5-history-api/history.js');
-
-var Runner = require('../components/runner.js');
-var Engine = require('../components/engine.js');
-var Dispatcher = require('../components/dispatcher.js');
-
-var UI = {
-    frontend: function (module, params) {
-        var renderUI = React.createElement(Engine, { module: module, params: params });
-
-        return renderUI;
-    }
-};
-
-Runner.start(function () {
-    Dispatcher.configure($ReactData.config);
-    var module = $ReactData.params.module;
-    var params = $ReactData.params;
-    delete params.module;
-
-    ReactDOM.render(UI.frontend(module, params), document.getElementById('react-root'));
-});
-
-},{"../components/dispatcher.js":1,"../components/engine.js":2,"../components/runner.js":8,"../node_modules/html5-history-api/history.js":12}],12:[function(require,module,exports){
+},{"./target_item.js":10}],12:[function(require,module,exports){
 /*!
  * History API JavaScript Library v4.2.7
  *
@@ -2204,4 +2194,4 @@ Runner.start(function () {
   return historyObject;
 });
 
-},{}]},{},[11]);
+},{}]},{},[5]);

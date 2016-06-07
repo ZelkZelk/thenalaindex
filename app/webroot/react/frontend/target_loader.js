@@ -1,5 +1,5 @@
 var HttpClient = require('../components/http_client.js');
-var Dispatcher = require('../components/dispatcher.js');
+var Dispatcher = require('./dispatcher.js');
 
 var States = {
     idling : 0,

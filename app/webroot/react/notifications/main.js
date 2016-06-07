@@ -1,4 +1,22 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var Runner = {
+    run: function (callback) {
+        callback();
+    },
+    start: function (callback) {
+        const loadedStates = ['complete', 'loaded', 'interactive'];
+
+        if (loadedStates.includes(document.readyState) && document.body) {
+            callback();
+        } else {
+            window.addEventListener('DOMContentLoaded', callback, false);
+        }
+    }
+};
+
+module.exports = Runner;
+
+},{}],2:[function(require,module,exports){
 var BigLink = React.createClass({
   displayName: "BigLink",
 
@@ -56,13 +74,64 @@ var BigLink = React.createClass({
 
 module.exports = BigLink;
 
-},{}],2:[function(require,module,exports){
-var BigLink = require('../components/biglink.js');
+},{}],3:[function(require,module,exports){
+var LinkList = require('./link_list.js');
+var Runner = require('../components/runner.js');
+var SingleAbmTable = require('./single_abm_table.js');
+
+var NotificationsEmail = {
+    onLinkClick: function (data, e) {
+        e.preventDefault();
+
+        var title = React.createElement(
+            'span',
+            null,
+            data.label,
+            ' ',
+            React.createElement(
+                'small',
+                null,
+                data.sublabel
+            )
+        );
+
+        var table = ReactDOM.render(React.createElement(SingleAbmTable, {
+            env: data,
+            field: $ReactData.abm.field,
+            fieldLabel: $ReactData.abm.fieldLabel,
+            fieldIcon: $ReactData.abm.fieldIcon,
+            feedApi: $ReactData.abm.feedApi,
+            pushApi: $ReactData.abm.pushApi,
+            dropApi: $ReactData.abm.dropApi,
+            editApi: $ReactData.abm.editApi,
+            icon: data.icon,
+            title: title,
+            emptyText: $ReactData.abm.emptyText }), document.getElementById('table'));
+
+        table.start();
+    }
+};
+
+Runner.start(function () {
+    for (var i in $ReactData.links) {
+        $ReactData.links[i].click = NotificationsEmail.onLinkClick;
+    }
+
+    ReactDOM.render(React.createElement(
+        'div',
+        null,
+        React.createElement(LinkList, { links: $ReactData.links }),
+        React.createElement('div', { id: 'table' })
+    ), document.getElementById('react-root'));
+});
+
+},{"../components/runner.js":1,"./link_list.js":4,"./single_abm_table.js":6}],4:[function(require,module,exports){
+var BigLink = require('./biglink.js');
 
 var LinkList = React.createClass({
     displayName: "LinkList",
 
-    protTypes: {
+    propTypes: {
         links: React.PropTypes.array.isRequired
     },
     render: function () {
@@ -96,25 +165,7 @@ var LinkList = React.createClass({
 
 module.exports = LinkList;
 
-},{"../components/biglink.js":1}],3:[function(require,module,exports){
-var Runner = {
-    run: function (callback) {
-        callback();
-    },
-    start: function (callback) {
-        const loadedStates = ['complete', 'loaded', 'interactive'];
-
-        if (loadedStates.includes(document.readyState) && document.body) {
-            callback();
-        } else {
-            window.addEventListener('DOMContentLoaded', callback, false);
-        }
-    }
-};
-
-module.exports = Runner;
-
-},{}],4:[function(require,module,exports){
+},{"./biglink.js":2}],5:[function(require,module,exports){
 var SingleAbmRow = React.createClass({
     displayName: "SingleAbmRow",
 
@@ -565,7 +616,7 @@ var SingleAbmRow = React.createClass({
 
 module.exports = SingleAbmRow;
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 var SingleAbmRow = require('./single_abm_row.js');
 
 var SingleAbmTable = React.createClass({
@@ -1154,55 +1205,4 @@ var SingleAbmTable = React.createClass({
 
 module.exports = SingleAbmTable;
 
-},{"./single_abm_row.js":4}],6:[function(require,module,exports){
-var LinkList = require('../components/link_list.js');
-var Runner = require('../components/runner.js');
-var SingleAbmTable = require('../components/single_abm_table.js');
-
-var NotificationsEmail = {
-    onLinkClick: function (data, e) {
-        e.preventDefault();
-
-        var title = React.createElement(
-            'span',
-            null,
-            data.label,
-            ' ',
-            React.createElement(
-                'small',
-                null,
-                data.sublabel
-            )
-        );
-
-        var table = ReactDOM.render(React.createElement(SingleAbmTable, {
-            env: data,
-            field: $ReactData.abm.field,
-            fieldLabel: $ReactData.abm.fieldLabel,
-            fieldIcon: $ReactData.abm.fieldIcon,
-            feedApi: $ReactData.abm.feedApi,
-            pushApi: $ReactData.abm.pushApi,
-            dropApi: $ReactData.abm.dropApi,
-            editApi: $ReactData.abm.editApi,
-            icon: data.icon,
-            title: title,
-            emptyText: $ReactData.abm.emptyText }), document.getElementById('table'));
-
-        table.start();
-    }
-};
-
-Runner.start(function () {
-    for (var i in $ReactData.links) {
-        $ReactData.links[i].click = NotificationsEmail.onLinkClick;
-    }
-
-    ReactDOM.render(React.createElement(
-        'div',
-        null,
-        React.createElement(LinkList, { links: $ReactData.links }),
-        React.createElement('div', { id: 'table' })
-    ), document.getElementById('react-root'));
-});
-
-},{"../components/link_list.js":2,"../components/runner.js":3,"../components/single_abm_table.js":5}]},{},[6]);
+},{"./single_abm_row.js":5}]},{},[3]);

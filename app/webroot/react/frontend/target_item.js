@@ -1,5 +1,5 @@
-var Dispatcher = require('../components/dispatcher.js');
-var Modules = require('../components/modules.js');
+var Dispatcher = require('./dispatcher.js');
+var Modules = require('./modules.js');
 
 var TargetItem = React.createClass({
     module : 'histories',

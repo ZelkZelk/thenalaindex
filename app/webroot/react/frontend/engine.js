@@ -1,7 +1,7 @@
 require('../node_modules/html5-history-api/history.js');
 
-var Dispatcher = require('../components/dispatcher.js');
 var HttpClient = require('../components/http_client.js');
+var Dispatcher = require('./dispatcher.js');
 
 var States = {
     loading : 1,
@@ -23,8 +23,8 @@ var UI = {
             </div>
         );
     },
-    done : function(data,callbacks){
-        return Dispatcher.resolvModuleUI(data, callbacks);
+    done : function(data,swapper){
+        return Dispatcher.resolvModuleUI(data, swapper);
     }
 };
 
@@ -152,14 +152,8 @@ var Engine = React.createClass({
         var data = this.state.data;
         data.module = module;
 
-        var renderUI = UI.done(data,this.getCallbacks());
+        var renderUI = UI.done(data,this.swapModule);
         return renderUI;
-    },
-    getCallbacks : function(){
-        return {
-            swapper : this.swapModule,
-            feeder : this.feedModule
-        };
     },
     render : function(){
         var state = this.getCurrentState();

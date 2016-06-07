@@ -14,6 +14,7 @@
         <meta content="klez" name="author"/>
         
         <link rel="shortcut icon" href="<?=$this->webroot?>favicon.ico"/>
+        <link rel="stylesheet" href="<?=$this->webroot?>css/frontend/main.css"/>
         
         <?php $this->Head->dumpCss($CUSTOM_CSS)?>
         <?php $this->Head->dumpJsVars($CUSTOM_JS_VARS)?>

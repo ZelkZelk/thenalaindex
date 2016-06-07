@@ -1,6 +1,6 @@
 require('../node_modules/html5-history-api/history.js');
 
-var Modules = require('../components/modules.js');
+var Modules = require('./modules.js');
 
 var Dispatcher = {
     config : null,
@@ -25,7 +25,7 @@ var Dispatcher = {
 
         return slug;
     },
-    resolvModuleUI : function(data,swapper,feeder){
+    resolvModuleUI : function(data,swapper){
         var render = ( <div>No View Set.. yet!</div> );
         var module = data.module;
 

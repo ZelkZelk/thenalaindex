@@ -1,4 +1,4 @@
-var BigLink = require('../components/biglink.js');
+var BigLink = require('./biglink.js');
 
 var LinkList = React.createClass({
     propTypes: {
