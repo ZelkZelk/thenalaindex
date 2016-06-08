@@ -5,6 +5,7 @@ class WebserviceVersion1Component extends Component{
     
     public function initialize(\Controller $controller) {
         $this->Controller = $controller;
+//        throw new BadRequestException();
         return parent::initialize($controller);
     }
     
@@ -51,8 +52,10 @@ class WebserviceVersion1Component extends Component{
             
             $histories = [];
             
-            foreach($logs as $log){
-                $histories[] = $log[$alias];
+            foreach($logs as $i => $log){
+                $blob = $log[$alias];
+                $blob['index'] = ($page - 1) * $limit + ($i + 1);
+                $histories[] = $blob;
             }
             
             $output = [

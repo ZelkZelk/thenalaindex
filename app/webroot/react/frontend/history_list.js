@@ -9,33 +9,31 @@ var States = {
 };
 
 var UI = {
-    get : function(react,rows,last){
+    get : function(react,content,last){
         var callbackSwapper = react.swapper;
+        var callbackUrlResolver = react.urlResolver;
         var state = react.state;
         var properties = react.props;
         var target = state.target;
 
         var renderUI = (
-            <div>
-                <h1>{target.name} <small>#{state.page}</small></h1>
+            <div id="history_list" className="module_wrapper">
+                <h1 className="module_title">{target.name} <i>(pág. {state.page})</i></h1>
 
-                <table>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
+                {content}
 
                 <HistoryLoader
                     last = {last}
                     page = {properties.page}
-                    swapper={callbackSwapper} />
+                    swapper={callbackSwapper}
+                    urlResolver={callbackUrlResolver} />
             </div>
         );
 
         return renderUI;
     },
     empty  : function(react){
-        var emptyUI = ( <tr><td>No hay Historiales para mostrar</td></tr> );
+        var emptyUI = ( <div className="row">No hay Historiales para mostrar</div> );
         var renderUI = UI.get(react,emptyUI,true);
         return renderUI;
     },
@@ -47,6 +45,7 @@ var UI = {
             return <HistoryItem
                 id={item.id}
                 key={item.id}
+                index={item.index}
                 starting={item.starting}
                 ending={item.ending}
                 http_petitions={item.http_petitions}
@@ -56,7 +55,13 @@ var UI = {
                 img_crawled={item.img_crawled} />
         });
 
-        var renderUI = UI.get(react,rows,false);
+        var content = (
+            <ul className="module_list">
+                {rows}
+            </ul>
+        );
+
+        var renderUI = UI.get(react,content,false);
         return renderUI;
     }
 };
@@ -111,13 +116,22 @@ var HistoryList = React.createClass({
 
         return Modules.histories.params(id,target,page);
     },
-    swapper : function(module,updateParams){
-        var params = this.getParams();
+    urlResolver : function(module,updateParams){
+        var params = this.getPagedParams(updateParams);
+        var url = Dispatcher.resolvModuleUrl(module,params);
+        return url;
+    },
+    getPagedParams : function(params){
+        var pagedParams = this.getParams();
 
-        for(var i in updateParams){
-            params[i] = updateParams[i];
+        for(var i in params){
+            pagedParams[i] = params[i];
         }
 
+        return pagedParams;
+    },
+    swapper : function(module,updateParams){
+        var params = this.getPagedParams(updateParams);
         Dispatcher.navigate(module,params,this.props.swapper);
     },
     render: function() {

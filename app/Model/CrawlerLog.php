@@ -235,7 +235,8 @@ class CrawlerLog extends AppModel {
             ],
             'conditions' => [
                 'CrawlerLog.target_id' => $target_id,
-                'CrawlerLog.status' => 'done'
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL
             ],
             'limit' => $limit,
             'offset' => $offset

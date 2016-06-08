@@ -11,15 +11,26 @@ var States = {
 
 var UI = {
     loading : (
-        <div>C A R G A N D O</div>
+        <div id="loading" className="module_wrapper">
+            <h1 className="module_title">Cargando Contenido...</h1>
+        </div>
     ),
-    error : function(retry){
-        var callback = retry;
+    error : function(react){
+        var callback = react.retry;
+        var homeCallbacak = react.home;
 
         return (
-            <div>
-                <p>E R R O R</p>
-                <button onClick={callback}>REINTENTAR</button>
+            <div id="error" className="module_wrapper">
+                <h1 className="module_title">E R R O R</h1>
+                <div className="row">
+                    <p>
+                        Hubo un problema al cargar este contenido.
+                    </p>
+                </div>
+                <div className="buttons">
+                    <a className="button" href={react.retryUrl()} onClick={callback}>R E I N T E N T A R</a>
+                    <a className="button" href={react.homeUrl()} onClick={homeCallbacak}>H O M E</a>
+                </div>
             </div>
         );
     },
@@ -100,6 +111,7 @@ var Engine = React.createClass({
         var module = this.state.module;
         return module;
     },
+    timeout : null,
     fetch : function(){
         this.fetchModule(this.state,this.error,this.done);
     },
@@ -145,7 +157,7 @@ var Engine = React.createClass({
         return render;
     },
     resolvErrorUI : function(){
-        var renderUI = UI.error(this.retry);
+        var renderUI = UI.error(this);
         return renderUI;
     },
     resolvDoneUI : function(module){
@@ -173,8 +185,23 @@ var Engine = React.createClass({
             state : States.error
         });
     },
+    home : function(event){
+        event.preventDefault();
+        Dispatcher.navigate('index',{},this.swapModule);
+        return false;
+    },
+    homeUrl : function(){
+        var url = Dispatcher.resolvModuleUrl('index',{});
+        return url;
+    },
+    retryUrl : function(){
+        var url = Dispatcher.resolvModuleUrl(history.state.module,history.state.params);
+        return url;
+    },
     retry : function(event){
+        event.preventDefault();
         this.load(history.state.module,history.state.params);
+        return false;
     },
     load : function(module,params){
         Dispatcher.configure($ReactData.config);

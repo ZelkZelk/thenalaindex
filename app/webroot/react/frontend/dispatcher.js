@@ -2,6 +2,7 @@ require('../node_modules/html5-history-api/history.js');
 
 var Modules = require('./modules.js');
 
+
 var Dispatcher = {
     config : null,
     configure : function(config){

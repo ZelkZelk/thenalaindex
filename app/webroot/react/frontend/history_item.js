@@ -3,10 +3,11 @@ var Dispatcher = require('./dispatcher.js');
 var HistoryItem = React.createClass({
     module : 'histories',
     componentWillMount : function(){
-        Dispatcher.configure($ReactData.config,$ReactData.params);
+        Dispatcher.configure($ReactData.config);
     },
     propTypes: {
         id : React.PropTypes.number.isRequired,
+        index : React.PropTypes.number.isRequired,
         starting : React.PropTypes.string.isRequired,
         ending : React.PropTypes.string.isRequired,
         http_petitions : React.PropTypes.number.isRequired,
@@ -34,21 +35,16 @@ var HistoryItem = React.createClass({
             target : this.props.name
         };
     },
-    dispatch : function(event){
-        event.preventDefault();
-        Dispatcher.navigate(this.getData(),this.props.swapper);
-        return false;
-    },
     render: function() {
         return (
-            <tr>
-                <td>
-                    <h2>Exploracion</h2>
-                    <h3>Iniciada: {this.readableDate(this.props.starting)}</h3>
-                    <h3>Terminada: {this.readableDate(this.props.ending)}</h3>
-                    <h3>Peticiones HTTP: {this.props.http_petitions}</h3>
-                </td>
-            </tr>
+            <li>
+                <a>
+                    <h2>Exploracion #{this.props.index}</h2>
+                    <div><b>Iniciada:</b> {this.readableDate(this.props.starting)}</div>
+                    <div><b>Terminada:</b> {this.readableDate(this.props.ending)}</div>
+                    <div><b>Peticiones HTTP:</b> {this.props.http_petitions}</div>
+                </a>
+            </li>
         );
     },
 });

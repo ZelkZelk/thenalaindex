@@ -26,12 +26,11 @@ var UI = {
         });
 
         var renderUI = (
-            <div>
-                <table>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
+            <div id="target_list" className="module_wrapper">
+                <h1 className="module_title">Sitios Disponibles</h1>
+                <ul className="module_list">
+                    {rows}
+                </ul>
             </div>
         );
 

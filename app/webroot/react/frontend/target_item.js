@@ -40,15 +40,24 @@ var TargetItem = React.createClass({
         return false;
     },
     render: function() {
+        var historial;
+
+        if(this.props.histories > 1){
+            historial = 'historiales';
+        }
+        else{
+            historial = 'historial';
+        }
+
         return (
-            <tr>
-                <td>
-                    <h2><a onClick={this.dispatch} href={this.resolvUrl()}>{this.props.name}</a></h2>
-                    <h3>URL: <a href={this.props.url} target="_blank">{this.props.url}</a> <i>({this.props.histories} historiales)</i></h3>
-                    <h3>Primera Exploracion: {this.readableDate(this.props.first_crawl)}</h3>
-                    <h3>Ultima vez Explorado: {this.readableDate(this.props.last_crawl)}</h3>
-                </td>
-            </tr>
+            <li onClick={this.dispatch}>
+                <a href={this.resolvUrl()}>
+                    <h2>{this.props.name}</h2>
+                    <div><b>URL:</b> {this.props.url} <i>({this.props.histories} {historial})</i></div>
+                    <div><b>Primera Exploracion:</b> {this.readableDate(this.props.first_crawl)}</div>
+                    <div><b>Ultima vez Explorado:</b> {this.readableDate(this.props.last_crawl)}</div>
+                </a>
+            </li>
         );
     },
 });

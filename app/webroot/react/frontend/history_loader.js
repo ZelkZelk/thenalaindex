@@ -1,12 +1,14 @@
+var Dispatcher = require('./dispatcher.js');
+
 var UI = {
     get : function(react){
         var forwardCallback = react.dispatchForward;
         var backwardCallback = react.dispatchBackward;
 
         return (
-            <div>
-                { react.props.page < 2 ? null : <button onClick={backwardCallback}>Anterior</button> }
-                { react.props.last ? null : <button onClick={forwardCallback}>Siguiente</button> }
+            <div className="buttons">
+                { react.props.page < 2 ? null : <a href={react.resolvBackwardUrl()} className="button" onClick={backwardCallback}>A N T E R I O R</a> }
+                { react.props.last ? null : <a href={react.resolvForwardUrl()} className="button" onClick={forwardCallback}>S I G U I E N T E</a> }
             </div>
         )
     }
@@ -16,8 +18,12 @@ var HistoryLoader = React.createClass({
     module : 'histories',
     propTypes : {
         swapper : React.PropTypes.func.isRequired,
+        urlResolver : React.PropTypes.func.isRequired,
         page : React.PropTypes.number.isRequired,
         last : React.PropTypes.bool.isRequired
+    },
+    componentWillMount : function(){
+        Dispatcher.configure($ReactData.config);
     },
     getInitialState : function(){
         return {
@@ -31,6 +37,14 @@ var HistoryLoader = React.createClass({
     resolvRenderUI : function(){
         var renderUI = UI.get(this);
         return renderUI;
+    },
+    resolvBackwardUrl : function(){
+        var url = this.props.urlResolver(this.getModule(),this.getParams(-1));
+        return url;
+    },
+    resolvForwardUrl : function(){
+        var url = this.props.urlResolver(this.getModule(),this.getParams(1));
+        return url;
     },
     getModule : function(){
         return this.module;

@@ -7,15 +7,24 @@ class FrontendController extends AppController {
     
     public function beforeFilter() {
         parent::beforeFilter();
-        
         $this->layout = 'frontend';
     }
     
     public function index(){
+        $this->loadHeaderConfig();
         $this->loadParams();
         $this->loadConfig();
         
         $this->React->load();
+    }
+    
+    private function loadHeaderConfig(){
+        $header = [];
+        $header['mainUrl'] = Router::url([ 'controller' => 'frontend' , 'action' => 'index'],true);
+        $header['logoUrl'] = Router::url('/',true) . 'img/logo.png';
+
+        $this->set('header',$header);
+        return $header;
     }
     
     private function loadConfig(){

@@ -100,7 +100,10 @@ class Target extends AppModel {
         $cnd['Target.status'] = true;
         
         $joins = [];
-        $joins[] = 'INNER JOIN crawler.crawler_logs AS "CrawlerLog" ON target_id = "Target".id AND "CrawlerLog".status = \'done\'';
+        $joins[] = 'INNER JOIN crawler.crawler_logs AS "CrawlerLog" '
+                . 'ON target_id = "Target".id AND '
+                . '"CrawlerLog".root_hash IS NOT NULL AND '
+                . '"CrawlerLog".status = \'done\'';
         
         $group = 'Target.id';
         $fields = 'Target.*, count(*) as histories';

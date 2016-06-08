@@ -108,6 +108,16 @@ var HttpClient = function () {
 module.exports = HttpClient;
 
 },{}],2:[function(require,module,exports){
+var Links = {
+    blurMe: function (event) {
+        var source = event.target || event.srcElement;
+        source.blur();
+    }
+};
+
+module.exports = Links;
+
+},{}],3:[function(require,module,exports){
 var Runner = {
     run: function (callback) {
         callback();
@@ -125,7 +135,7 @@ var Runner = {
 
 module.exports = Runner;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
 var Modules = require('./modules.js');
@@ -272,7 +282,7 @@ var Dispatcher = {
 
 module.exports = Dispatcher;
 
-},{"../node_modules/html5-history-api/history.js":12,"./modules.js":9}],4:[function(require,module,exports){
+},{"../node_modules/html5-history-api/history.js":14,"./modules.js":11}],5:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
 var HttpClient = require('../components/http_client.js');
@@ -287,24 +297,47 @@ var States = {
 var UI = {
     loading: React.createElement(
         'div',
-        null,
-        'C A R G A N D O'
+        { id: 'loading', className: 'module_wrapper' },
+        React.createElement(
+            'h1',
+            { className: 'module_title' },
+            'Cargando Contenido...'
+        )
     ),
-    error: function (retry) {
-        var callback = retry;
+    error: function (react) {
+        var callback = react.retry;
+        var homeCallbacak = react.home;
 
         return React.createElement(
             'div',
-            null,
+            { id: 'error', className: 'module_wrapper' },
             React.createElement(
-                'p',
-                null,
+                'h1',
+                { className: 'module_title' },
                 'E R R O R'
             ),
             React.createElement(
-                'button',
-                { onClick: callback },
-                'REINTENTAR'
+                'div',
+                { className: 'row' },
+                React.createElement(
+                    'p',
+                    null,
+                    'Hubo un problema al cargar este contenido.'
+                )
+            ),
+            React.createElement(
+                'div',
+                { className: 'buttons' },
+                React.createElement(
+                    'a',
+                    { className: 'button', href: react.retryUrl(), onClick: callback },
+                    'R E I N T E N T A R'
+                ),
+                React.createElement(
+                    'a',
+                    { className: 'button', href: react.homeUrl(), onClick: homeCallbacak },
+                    'H O M E'
+                )
             )
         );
     },
@@ -387,6 +420,7 @@ var Engine = React.createClass({
         var module = this.state.module;
         return module;
     },
+    timeout: null,
     fetch: function () {
         this.fetchModule(this.state, this.error, this.done);
     },
@@ -436,7 +470,7 @@ var Engine = React.createClass({
         return render;
     },
     resolvErrorUI: function () {
-        var renderUI = UI.error(this.retry);
+        var renderUI = UI.error(this);
         return renderUI;
     },
     resolvDoneUI: function (module) {
@@ -464,8 +498,23 @@ var Engine = React.createClass({
             state: States.error
         });
     },
+    home: function (event) {
+        event.preventDefault();
+        Dispatcher.navigate('index', {}, this.swapModule);
+        return false;
+    },
+    homeUrl: function () {
+        var url = Dispatcher.resolvModuleUrl('index', {});
+        return url;
+    },
+    retryUrl: function () {
+        var url = Dispatcher.resolvModuleUrl(history.state.module, history.state.params);
+        return url;
+    },
     retry: function (event) {
+        event.preventDefault();
         this.load(history.state.module, history.state.params);
+        return false;
     },
     load: function (module, params) {
         Dispatcher.configure($ReactData.config);
@@ -477,16 +526,39 @@ var Engine = React.createClass({
 
 module.exports = Engine;
 
-},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":12,"./dispatcher.js":3}],5:[function(require,module,exports){
-require('../node_modules/html5-history-api/history.js');
-
+},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":14,"./dispatcher.js":4}],6:[function(require,module,exports){
 var Runner = require('../components/runner.js');
 var Dispatcher = require('./dispatcher.js');
 var Engine = require('./engine.js');
+var Header = require('./header.js');
 
 var UI = {
-    frontend: function (module, params) {
-        var renderUI = React.createElement(Engine, { module: module, params: params });
+    header: function (engine) {
+        var mainUrl = $ReactData.header.mainUrl;
+        var logoUrl = $ReactData.header.logoUrl;
+        var swapper = engine.swapModule;
+        var header = React.createElement(Header, {
+            logoUrl: logoUrl,
+            mainUrl: mainUrl,
+            swapper: swapper });
+
+        return header;
+    },
+    engine: function () {
+        var module = $ReactData.params.module;
+        var params = $ReactData.params;
+        delete params.module;
+
+        var engine = React.createElement(Engine, { module: module, params: params });
+        return engine;
+    },
+    frontend: function () {
+        var renderUI = React.createElement(
+            'div',
+            { className: 'wrapper' },
+            React.createElement('div', { id: 'upper' }),
+            React.createElement('div', { id: 'middle' })
+        );
 
         return renderUI;
     }
@@ -494,14 +566,73 @@ var UI = {
 
 Runner.start(function () {
     Dispatcher.configure($ReactData.config);
-    var module = $ReactData.params.module;
-    var params = $ReactData.params;
-    delete params.module;
 
-    ReactDOM.render(UI.frontend(module, params), document.getElementById('react-root'));
+    var frontend = ReactDOM.render(UI.frontend(), document.getElementById('react-root'));
+
+    var engine = ReactDOM.render(UI.engine(), document.getElementById('middle'));
+
+    var header = ReactDOM.render(UI.header(engine), document.getElementById('upper'));
 });
 
-},{"../components/runner.js":2,"../node_modules/html5-history-api/history.js":12,"./dispatcher.js":3,"./engine.js":4}],6:[function(require,module,exports){
+},{"../components/runner.js":3,"./dispatcher.js":4,"./engine.js":5,"./header.js":7}],7:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var Links = require('../components/links.js');
+
+var UI = {
+    get: function (react) {
+        var properties = react.props;
+        var mainClicker = react.mainClicker;
+
+        var renderUI = React.createElement(
+            'div',
+            { className: 'header' },
+            React.createElement(
+                'span',
+                null,
+                React.createElement(
+                    'a',
+                    { onFocus: Links.blurMe, href: properties.mainUrl, onClick: mainClicker },
+                    React.createElement('img', { src: properties.logoUrl }),
+                    ' ',
+                    React.createElement('br', null),
+                    'The Nala Index'
+                )
+            )
+        );
+
+        return renderUI;
+    }
+};
+
+var Header = React.createClass({
+    displayName: 'Header',
+
+    propTypes: {
+        mainUrl: React.PropTypes.string.isRequired,
+        logoUrl: React.PropTypes.string.isRequired,
+        swapper: React.PropTypes.func.isRequired
+    },
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
+    },
+    mainClicker: function (event) {
+        event.preventDefault();
+        Dispatcher.navigate('index', {}, this.props.swapper);
+        return false;
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    }
+});
+
+module.exports = Header;
+
+},{"../components/links.js":2,"./dispatcher.js":4}],8:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 
 var HistoryItem = React.createClass({
@@ -509,10 +640,11 @@ var HistoryItem = React.createClass({
 
     module: 'histories',
     componentWillMount: function () {
-        Dispatcher.configure($ReactData.config, $ReactData.params);
+        Dispatcher.configure($ReactData.config);
     },
     propTypes: {
         id: React.PropTypes.number.isRequired,
+        index: React.PropTypes.number.isRequired,
         starting: React.PropTypes.string.isRequired,
         ending: React.PropTypes.string.isRequired,
         http_petitions: React.PropTypes.number.isRequired,
@@ -540,39 +672,50 @@ var HistoryItem = React.createClass({
             target: this.props.name
         };
     },
-    dispatch: function (event) {
-        event.preventDefault();
-        Dispatcher.navigate(this.getData(), this.props.swapper);
-        return false;
-    },
     render: function () {
         return React.createElement(
-            'tr',
+            'li',
             null,
             React.createElement(
-                'td',
+                'a',
                 null,
                 React.createElement(
                     'h2',
                     null,
-                    'Exploracion'
+                    'Exploracion #',
+                    this.props.index
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'Iniciada: ',
+                    React.createElement(
+                        'b',
+                        null,
+                        'Iniciada:'
+                    ),
+                    ' ',
                     this.readableDate(this.props.starting)
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'Terminada: ',
+                    React.createElement(
+                        'b',
+                        null,
+                        'Terminada:'
+                    ),
+                    ' ',
                     this.readableDate(this.props.ending)
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'Peticiones HTTP: ',
+                    React.createElement(
+                        'b',
+                        null,
+                        'Peticiones HTTP:'
+                    ),
+                    ' ',
                     this.props.http_petitions
                 )
             )
@@ -582,7 +725,7 @@ var HistoryItem = React.createClass({
 
 module.exports = HistoryItem;
 
-},{"./dispatcher.js":3}],7:[function(require,module,exports){
+},{"./dispatcher.js":4}],9:[function(require,module,exports){
 var HistoryLoader = require('./history_loader.js');
 var HistoryItem = require('./history_item.js');
 var Dispatcher = require('./dispatcher.js');
@@ -594,53 +737,44 @@ var States = {
 };
 
 var UI = {
-    get: function (react, rows, last) {
+    get: function (react, content, last) {
         var callbackSwapper = react.swapper;
+        var callbackUrlResolver = react.urlResolver;
         var state = react.state;
         var properties = react.props;
         var target = state.target;
 
         var renderUI = React.createElement(
             'div',
-            null,
+            { id: 'history_list', className: 'module_wrapper' },
             React.createElement(
                 'h1',
-                null,
+                { className: 'module_title' },
                 target.name,
                 ' ',
                 React.createElement(
-                    'small',
+                    'i',
                     null,
-                    '#',
-                    state.page
+                    '(pág. ',
+                    state.page,
+                    ')'
                 )
             ),
-            React.createElement(
-                'table',
-                null,
-                React.createElement(
-                    'tbody',
-                    null,
-                    rows
-                )
-            ),
+            content,
             React.createElement(HistoryLoader, {
                 last: last,
                 page: properties.page,
-                swapper: callbackSwapper })
+                swapper: callbackSwapper,
+                urlResolver: callbackUrlResolver })
         );
 
         return renderUI;
     },
     empty: function (react) {
         var emptyUI = React.createElement(
-            'tr',
-            null,
-            React.createElement(
-                'td',
-                null,
-                'No hay Historiales para mostrar'
-            )
+            'div',
+            { className: 'row' },
+            'No hay Historiales para mostrar'
         );
         var renderUI = UI.get(react, emptyUI, true);
         return renderUI;
@@ -653,6 +787,7 @@ var UI = {
             return React.createElement(HistoryItem, {
                 id: item.id,
                 key: item.id,
+                index: item.index,
                 starting: item.starting,
                 ending: item.ending,
                 http_petitions: item.http_petitions,
@@ -662,7 +797,13 @@ var UI = {
                 img_crawled: item.img_crawled });
         });
 
-        var renderUI = UI.get(react, rows, false);
+        var content = React.createElement(
+            'ul',
+            { className: 'module_list' },
+            rows
+        );
+
+        var renderUI = UI.get(react, content, false);
         return renderUI;
     }
 };
@@ -718,13 +859,22 @@ var HistoryList = React.createClass({
 
         return Modules.histories.params(id, target, page);
     },
-    swapper: function (module, updateParams) {
-        var params = this.getParams();
+    urlResolver: function (module, updateParams) {
+        var params = this.getPagedParams(updateParams);
+        var url = Dispatcher.resolvModuleUrl(module, params);
+        return url;
+    },
+    getPagedParams: function (params) {
+        var pagedParams = this.getParams();
 
-        for (var i in updateParams) {
-            params[i] = updateParams[i];
+        for (var i in params) {
+            pagedParams[i] = params[i];
         }
 
+        return pagedParams;
+    },
+    swapper: function (module, updateParams) {
+        var params = this.getPagedParams(updateParams);
         Dispatcher.navigate(module, params, this.props.swapper);
     },
     render: function () {
@@ -761,37 +911,43 @@ var HistoryList = React.createClass({
 
 module.exports = HistoryList;
 
-},{"./dispatcher.js":3,"./history_item.js":6,"./history_loader.js":8,"./modules.js":9}],8:[function(require,module,exports){
+},{"./dispatcher.js":4,"./history_item.js":8,"./history_loader.js":10,"./modules.js":11}],10:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+
 var UI = {
     get: function (react) {
         var forwardCallback = react.dispatchForward;
         var backwardCallback = react.dispatchBackward;
 
         return React.createElement(
-            'div',
-            null,
+            "div",
+            { className: "buttons" },
             react.props.page < 2 ? null : React.createElement(
-                'button',
-                { onClick: backwardCallback },
-                'Anterior'
+                "a",
+                { href: react.resolvBackwardUrl(), className: "button", onClick: backwardCallback },
+                "A N T E R I O R"
             ),
             react.props.last ? null : React.createElement(
-                'button',
-                { onClick: forwardCallback },
-                'Siguiente'
+                "a",
+                { href: react.resolvForwardUrl(), className: "button", onClick: forwardCallback },
+                "S I G U I E N T E"
             )
         );
     }
 };
 
 var HistoryLoader = React.createClass({
-    displayName: 'HistoryLoader',
+    displayName: "HistoryLoader",
 
     module: 'histories',
     propTypes: {
         swapper: React.PropTypes.func.isRequired,
+        urlResolver: React.PropTypes.func.isRequired,
         page: React.PropTypes.number.isRequired,
         last: React.PropTypes.bool.isRequired
+    },
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
     },
     getInitialState: function () {
         return {
@@ -805,6 +961,14 @@ var HistoryLoader = React.createClass({
     resolvRenderUI: function () {
         var renderUI = UI.get(this);
         return renderUI;
+    },
+    resolvBackwardUrl: function () {
+        var url = this.props.urlResolver(this.getModule(), this.getParams(-1));
+        return url;
+    },
+    resolvForwardUrl: function () {
+        var url = this.props.urlResolver(this.getModule(), this.getParams(1));
+        return url;
     },
     getModule: function () {
         return this.module;
@@ -830,7 +994,7 @@ var HistoryLoader = React.createClass({
 
 module.exports = HistoryLoader;
 
-},{}],9:[function(require,module,exports){
+},{"./dispatcher.js":4}],11:[function(require,module,exports){
 var Modules = {
     index: {
         render: function (data, swapper) {
@@ -866,7 +1030,7 @@ var Modules = {
 
 module.exports = Modules;
 
-},{"./history_list.js":7,"./target_list.js":11}],10:[function(require,module,exports){
+},{"./history_list.js":9,"./target_list.js":13}],12:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var Modules = require('./modules.js');
 
@@ -911,49 +1075,66 @@ var TargetItem = React.createClass({
         return false;
     },
     render: function () {
+        var historial;
+
+        if (this.props.histories > 1) {
+            historial = 'historiales';
+        } else {
+            historial = 'historial';
+        }
+
         return React.createElement(
-            'tr',
-            null,
+            'li',
+            { onClick: this.dispatch },
             React.createElement(
-                'td',
-                null,
+                'a',
+                { href: this.resolvUrl() },
                 React.createElement(
                     'h2',
                     null,
-                    React.createElement(
-                        'a',
-                        { onClick: this.dispatch, href: this.resolvUrl() },
-                        this.props.name
-                    )
+                    this.props.name
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'URL: ',
                     React.createElement(
-                        'a',
-                        { href: this.props.url, target: '_blank' },
-                        this.props.url
+                        'b',
+                        null,
+                        'URL:'
                     ),
+                    ' ',
+                    this.props.url,
                     ' ',
                     React.createElement(
                         'i',
                         null,
                         '(',
                         this.props.histories,
-                        ' historiales)'
+                        ' ',
+                        historial,
+                        ')'
                     )
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'Primera Exploracion: ',
+                    React.createElement(
+                        'b',
+                        null,
+                        'Primera Exploracion:'
+                    ),
+                    ' ',
                     this.readableDate(this.props.first_crawl)
                 ),
                 React.createElement(
-                    'h3',
+                    'div',
                     null,
-                    'Ultima vez Explorado: ',
+                    React.createElement(
+                        'b',
+                        null,
+                        'Ultima vez Explorado:'
+                    ),
+                    ' ',
                     this.readableDate(this.props.last_crawl)
                 )
             )
@@ -963,7 +1144,7 @@ var TargetItem = React.createClass({
 
 module.exports = TargetItem;
 
-},{"./dispatcher.js":3,"./modules.js":9}],11:[function(require,module,exports){
+},{"./dispatcher.js":4,"./modules.js":11}],13:[function(require,module,exports){
 var TargetItem = require('./target_item.js');
 
 var States = {
@@ -973,9 +1154,9 @@ var States = {
 
 var UI = {
     empty: React.createElement(
-        'div',
+        "div",
         null,
-        'No hay Historiales Disponibles'
+        "No hay Historiales Disponibles"
     ),
     done: function (data, props) {
         var properties = props;
@@ -994,16 +1175,17 @@ var UI = {
         });
 
         var renderUI = React.createElement(
-            'div',
-            null,
+            "div",
+            { id: "target_list", className: "module_wrapper" },
             React.createElement(
-                'table',
-                null,
-                React.createElement(
-                    'tbody',
-                    null,
-                    rows
-                )
+                "h1",
+                { className: "module_title" },
+                "Sitios Disponibles"
+            ),
+            React.createElement(
+                "ul",
+                { className: "module_list" },
+                rows
             )
         );
 
@@ -1012,7 +1194,7 @@ var UI = {
 };
 
 var TargetList = React.createClass({
-    displayName: 'TargetList',
+    displayName: "TargetList",
 
     propTypes: {
         list: React.PropTypes.array.isRequired,
@@ -1071,7 +1253,7 @@ var TargetList = React.createClass({
 
 module.exports = TargetList;
 
-},{"./target_item.js":10}],12:[function(require,module,exports){
+},{"./target_item.js":12}],14:[function(require,module,exports){
 /*!
  * History API JavaScript Library v4.2.7
  *
@@ -2194,4 +2376,4 @@ module.exports = TargetList;
   return historyObject;
 });
 
-},{}]},{},[5]);
+},{}]},{},[6]);
