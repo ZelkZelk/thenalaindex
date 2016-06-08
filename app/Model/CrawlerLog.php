@@ -214,4 +214,65 @@ class CrawlerLog extends AppModel {
         
         $this->Data()->write($field,$value);
     }
+    
+    /* Busca logs por target_id paginado */
+    
+    public function findPagedByTarget($target_id,$page,$limit){
+        $offset = ($page - 1) * $limit;
+        
+        $logs = $this->find('all',[
+            'order' => 'CrawlerLog.starting desc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
+            ],
+            'conditions' => [
+                'CrawlerLog.target_id' => $target_id,
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL
+            ],
+            'limit' => $limit,
+            'offset' => $offset
+        ]);
+        
+        return $logs;
+    }
+    
+    /* Setea el root hash, solo si no es NULL */
+    
+    public function setRootHash($hash){
+        $root = $this->Data()->read('root_hash');
+                
+        if(is_null($root)){
+            $this->Data()->write('root_hash',$hash);
+            if($this->store() === false){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Obtiene los crawler logs sin root hash
+     */
+    
+    public function findUnRooted(){
+        $cnd = [];
+        $cnd['CrawlerLog.root_hash'] = null;
+        
+        return $this->find('all',[
+            'conditions' => $cnd,
+            'fields' => 'CrawlerLog.id'
+        ]);
+    }
+    
+    
 }

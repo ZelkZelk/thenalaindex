@@ -1,0 +1,122 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline; }
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section {
+  display: block; }
+
+body {
+  line-height: 1; }
+
+ol, ul {
+  list-style: none; }
+
+blockquote, q {
+  quotes: none; }
+
+blockquote:before, blockquote:after {
+  content: '';
+  content: none; }
+
+q:before, q:after {
+  content: '';
+  content: none; }
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
+body {
+  font-family: courier;
+  font-size: 1.0em;
+  color: #343434;
+  background: #f5f5f5; }
+
+div.wrapper a, div.wrapper a:visited, div.wrapper a:hover {
+  color: #af0000;
+  text-decoration: none;
+  cursor: pointer; }
+div.wrapper a:active {
+  color: orange; }
+div.wrapper a.button, div.wrapper button {
+  background: #f5f5f5;
+  color: #305074;
+  font-weight: bolder;
+  padding: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7em;
+  border: #103054 1px solid;
+  border-left: #103054 10px solid;
+  margin-right: 15px;
+  font-family: sans-serif; }
+div.wrapper a.button:hover, div.wrapper button:hover {
+  background: #d4d4d4; }
+div.wrapper div.module_wrapper {
+  margin-bottom: 30px; }
+  div.wrapper div.module_wrapper div.row {
+    margin-left: 30px;
+    margin-right: 30px; }
+  div.wrapper div.module_wrapper div.buttons {
+    margin-left: 30px;
+    margin-right: 30px;
+    margin-top: 30px; }
+div.wrapper h1.module_title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #103054;
+  border-left: #103054 20px solid;
+  margin: 30px;
+  padding-left: 20px; }
+div.wrapper ul.module_list {
+  text-align: left;
+  margin-bottom: 30px;
+  margin-top: 30px; }
+  div.wrapper ul.module_list li {
+    background: #d3d3d3;
+    cursor: pointer;
+    text-align: left;
+    display: block;
+    margin-bottom: 30px;
+    margin-left: 30px;
+    margin-right: 30px;
+    padding: 10px; }
+    div.wrapper ul.module_list li a {
+      color: #343434; }
+    div.wrapper ul.module_list li h2 {
+      color: #af0000;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 1.1em; }
+    div.wrapper ul.module_list li div b {
+      font-weight: bold; }
+    div.wrapper ul.module_list li div i {
+      font-style: italic; }
+
+div.header {
+  background: #103054;
+  padding: 10px;
+  text-align: center; }
+  div.header span {
+    font-size: 1.2em;
+    color: #ffffff;
+    display: inline-block;
+    text-align: center; }
+    div.header span a, div.header span a:visited, div.header span a:hover, div.header span a:active {
+      color: #ffffff; }
+      div.header span a img, div.header span a:visited img, div.header span a:hover img, div.header span a:active img {
+        width: 60px;
+        height: auto; }
+
+/*# sourceMappingURL=main.css.map */

@@ -55,6 +55,8 @@ class DispatcherShell extends AppShell{
     private function parallelCrawler($target_id){
         $path = dirname(__FILE__);
         $app = $path . '/../..';
-        exec("($app/Console/cake crawler -t $target_id) > /dev/null &");
+        
+        $file = "/tmp/nala.t{$target_id}." . date('dmY') . '.log';
+        exec("($app/Console/cake crawler -t $target_id) > $file &");
     }
 }

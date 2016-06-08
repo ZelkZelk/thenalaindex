@@ -93,6 +93,31 @@ class Target extends AppModel {
         
         return $targets;
     }
+    /* Obtiene los Targets habilitados. */
+    
+    public function findTargets(){
+        $cnd = [];
+        $cnd['Target.status'] = true;
+        
+        $joins = [];
+        $joins[] = 'INNER JOIN crawler.crawler_logs AS "CrawlerLog" '
+                . 'ON target_id = "Target".id AND '
+                . '"CrawlerLog".root_hash IS NOT NULL AND '
+                . '"CrawlerLog".status = \'done\'';
+        
+        $group = 'Target.id';
+        $fields = 'Target.*, count(*) as histories';
+        
+        $targets = $this->find('all',[
+            'order' => 'Target.name',
+            'conditions' => $cnd,
+            'joins' => $joins,
+            'group' => $group,
+            'fields' => $fields
+        ]);
+        
+        return $targets;
+    }
     
     /* Inicializa el Crawler, setea las fecha correctas para last_crawl y first_crawl */
     

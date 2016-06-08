@@ -365,4 +365,46 @@ class MetaDataFile extends AppModel {
         
         return $data;
     }
+    
+    /**
+     * Obtiene el hash del meta data file
+     */
+    
+    public function getHash(){
+        $cnd = [];
+        $cnd['MetaDataFile.id'] = $this->id;
+        
+        $data = $this->find('first',[
+            'conditions' => $cnd,
+            'fields' => 'MetaDataFile.hash'
+        ]);
+        
+        if($data){
+            $hash = $data['MetaDataFile']['hash'];
+            return $hash;
+        }
+        
+        return false;
+    }
+    /**
+     * Obtiene el primer hash relacionado al CrawlerLog
+     */
+    
+    public function getFirstHash(CrawlerLog $Log){
+        $cnd = [];
+        $cnd['MetaDataFile.crawler_log_id'] = $Log->id;
+        
+        $data = $this->find('first',[
+            'conditions' => $cnd,
+            'fields' => 'MetaDataFile.hash',
+            'order' => 'MetaDataFile.id asc'
+        ]);
+        
+        if($data){
+            $hash = $data['MetaDataFile']['hash'];
+            return $hash;
+        }
+        
+        return false;
+    }
 }

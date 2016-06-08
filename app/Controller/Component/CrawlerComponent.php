@@ -69,6 +69,8 @@ class CrawlerComponent extends Component{
         Configure::load('crawler');
         $this->httpWait = Configure::read('Crawler.http_wait');
         $this->failureLimit = Configure::read('Crawler.failure_limit');
+        ini_set('memory_limit',Configure::read('Crawler.max_memory'));
+        register_shutdown_function('deadpitbull');
     }
     
     /* Punto de partida para el proceso de crawling.
@@ -378,7 +380,7 @@ class CrawlerComponent extends Component{
         $this->initMemoryLogs();
             
         while($url = $this->Queue->fetch()){ 
-            $this->memoryProfiler();
+            $this->memoryProfiler('HEAD');
             
             if($this->Robots->isAllowed($url) === false){
                 $this->onRobotsDisallowed($url);
@@ -388,6 +390,7 @@ class CrawlerComponent extends Component{
             $this->sleepCrawl();
             $this->Http->get($url);
             $this->CrawlerLog->increment('http_petitions');
+            $this->memoryProfiler('GET');
             
             if($this->Http->isAcceptable() === false){
                 $this->CrawlerLog->increment('http_errors');
@@ -396,6 +399,9 @@ class CrawlerComponent extends Component{
             else{
                 $this->onHttpAcceptable($url);
             }
+            
+            $this->CrawlerLog->store();
+            $this->memoryProfiler('TAIL');
         } 
         
         $this->memorySummary();
@@ -415,13 +421,13 @@ class CrawlerComponent extends Component{
     
     /* Con esta funcion reportamos el uso de memoria */
     
-    private function memoryProfiler(){
+    private function memoryProfiler($tag){
         $enabled = Configure::read('Crawler.memory_profiler');
         
         if($enabled){
             $emalloc = memory_get_usage();
             $real = memory_get_usage(true);            
-            $this->memoryLog("<EMALLOC={$emalloc},REAL={$real}>");
+            $this->memoryLog("[$tag] <EMALLOC={$emalloc},REAL={$real}>");
         }
     }
     
@@ -463,6 +469,8 @@ class CrawlerComponent extends Component{
      *      5. Establece la url como explorada satisfactoriamente, la saca de la
      *          cola. Si hubo algun redirect por parte del server dicha URL tambien
      *          debe establecerse como explorada.
+     *      6. Actualiza el root hash de la exploracion, el root hash es el primer
+     *          hash creado.
      **/
     
     private $Url = null;
@@ -473,6 +481,7 @@ class CrawlerComponent extends Component{
         $this->createMetaData();
         $this->createDataFile();
         $this->createHtmldocLink();
+        $this->setRootHash();
         
         if($this->Referer !== $url){
             $this->logcat("MOVED URL:<{$url},{$this->Referer}");
@@ -491,6 +500,26 @@ class CrawlerComponent extends Component{
         }
         
         $this->Queue->done($url);        
+    }
+    
+    /**
+     * Actualiza el root hash de la exploracion actual, el root hash siempre
+     * sera el primer hash creado.
+     */
+    
+    private $rootHashed = false;
+    
+    private function setRootHash(){
+        if($this->rootHashed){
+            return;
+        }
+        
+        $this->rootHashed = true;
+        $hash = $this->MetaDataFile->getHash();
+        
+        if($this->CrawlerLog->setRootHash($hash) === false){
+            throw new Exception('CrawlerLog::setRootHash() === false');
+        }
     }
     
     /* Carga la URL referer */
@@ -708,6 +737,7 @@ class CrawlerComponent extends Component{
     
     private function onHttpInacceptable($url){
         $counter = $this->Queue->failureIncrement($url);
+        $this->Http->clear();   
         
         if($counter >= $this->failureLimit){
             $this->Queue->fail($url);
@@ -757,4 +787,15 @@ class CrawlerComponent extends Component{
         
         $this->Notification->done($this->CrawlerLog);
     }
+}
+
+function deadpitbull() {
+    $tmp = '/tmp/nalacrash-' . time() . '.txt';
+    
+    $message  = [
+        'error' => error_get_last(),
+        'conf' => ini_get_all()
+    ];
+    
+    file_put_contents($tmp, json_encode($message));
 }

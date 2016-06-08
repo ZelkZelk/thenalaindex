@@ -1,8 +1,8 @@
 <?php
 
-App::uses('AppController', 'Controller');
+App::uses('BackendAppController', 'Controller');
 
-class AdministratorsController extends AppController {
+class AdministratorsController extends BackendAppController {
     private static $addButtonString = 'Agregar Administrador';
     private static $addFailString = 'Error al agregar Administrador';
     private static $addInvalidString = 'Error en los datos proporcionados';
@@ -20,7 +20,7 @@ class AdministratorsController extends AppController {
     private static $showAction = 'show';
 
     public $uses = array('Administrator');
-    public $components = array('Scaffold');
+    public $components = [ 'React', 'Login','Session', 'Scaffold' ];
     public $helpers = array('Scaffold');
     
     /* Controladora de la funcion de creacion de Administradores. */

@@ -1,8 +1,8 @@
 <?php
 
-App::uses('AppController', 'Controller');
+App::uses('BackendAppController', 'Controller');
 
-class TargetsController extends AppController {
+class TargetsController extends BackendAppController {
     private static $addButtonString = 'Agregar Sitio';
     private static $addFailString = 'Error al agregar Sitio';
     private static $addInvalidString = 'Error en los datos proporcionados';
@@ -23,9 +23,9 @@ class TargetsController extends AppController {
     private static $archiveAction = 'archive';
     private static $showAction = 'show';
 
-    public $uses = array('Target');
-    public $components = array('Scaffold');
-    public $helpers = array('Scaffold');
+    public $uses = [ 'Target' ];
+    public $components = [ 'React', 'Login','Session', 'Scaffold' ];
+    public $helpers = [ 'Scaffold' ];
     
     /* Controladora de la funcion de creacion de Sitios. */
     

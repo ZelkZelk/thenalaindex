@@ -1,5 +1,5 @@
 var Runner = {    
-    run: function(callback){        
+    run: function(callback){
         callback();
     },
     start: function(callback){
@@ -7,7 +7,7 @@ var Runner = {
 
         if (loadedStates.includes(document.readyState) && document.body) {
             callback();
-        } 
+        }
         else {
             window.addEventListener('DOMContentLoaded', callback, false);
         }

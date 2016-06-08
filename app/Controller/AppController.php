@@ -6,6 +6,59 @@ class AppController extends Controller {
     public $components = [ 'Login', 'Session' ];
     public $helpers = [ 'Head' ];
     
+    /* Obtiene las acciones disponibles del administrador en el menu contextual 
+     * de la barra superior de la pagina.
+     */
+    
+    protected function getAdminActions(){
+        Configure::load('login');
+        $logoutURL = Configure::read('Logout.url');
+        $logoutData = $this->getActionData($logoutURL['controller'], $logoutURL['action']);
+        
+        return [
+            $logoutData
+        ];
+    }
+    
+    /* Obtiene los metadatos del sitemap de la accion especificada */
+    
+    public function getActionData($ctrl,$actn){
+        Configure::load('sitemap');            
+        $data = Configure::read("{$ctrl}.{$actn}");
+        $data['controller'] = $ctrl;
+        $data['action'] = $actn;
+        return $data;
+    }
+    
+    /* Almacena la configuracion del sitemap de esta accion */
+    
+    protected $Conf = [];
+    
+    /* Antes de cada accion vamos a preguntar si es necesario estar logueado
+     * y redirigir a la pantalla si es que no tenemos un administrador logueado.
+     */
+    
+    public function beforeFilter() { 
+        $this->loadConf();
+        
+        if($this->Login->isRequired($this->request)){
+            $this->fail($this->Login->getLastError());
+            $this->Login->redirect();
+        }
+        
+        parent::beforeFilter();
+    }
+    
+    /* Carga la configuracion del sitemap del par controlador-accion actual */
+    
+    private function loadConf(){        
+        $ctrl = $this->params['controller'];
+        $actn = $this->params['action'];
+        
+        Configure::load('sitemap');
+        $this->Conf = Configure::read("{$ctrl}.{$actn}");
+    }
+    
     /* Agrega un css al HEAD */
     
     private $css = [];
@@ -42,97 +95,14 @@ class AppController extends Controller {
         return $this->jsVars;
     }
     
-    /* Almacena la configuracion del sitemap de esta accion */
-    
-    protected $Conf = [];
-    
-    /* Antes de cada accion vamos a preguntar si es necesario estar logueado
-     * y redirigir a la pantalla si es que no tenemos un administrador logueado.
-     */
-    
-    public function beforeFilter() { 
-        $this->loadConf();
-        
-        if($this->Login->isRequired($this->request)){
-            $this->fail($this->Login->getLastError());
-            $this->Login->redirect();
-        }
-        
-        parent::beforeFilter();
-    }
-    
-    /* Carga la configuracion del sitemap del par controlador-accion actual */
-    
-    private function loadConf(){        
-        $ctrl = $this->params['controller'];
-        $actn = $this->params['action'];
-        
-        Configure::load('sitemap');
-        $this->Conf = Configure::read("{$ctrl}.{$actn}");
-    }
-    
-    /* Obtiene las acciones disponibles del administrador en el menu contextual 
-     * de la barra superior de la pagina.
-     */
-    
-    private function getAdminActions(){
-        Configure::load('login');
-        $logoutURL = Configure::read('Logout.url');
-        $logoutData = $this->getActionData($logoutURL['controller'], $logoutURL['action']);
-        
-        return [
-            $logoutData
-        ];
-    }
-    
-    /* Obtiene los metadatos del sitemap de la accion especificada */
-    
-    public function getActionData($ctrl,$actn){
-        Configure::load('sitemap');            
-        $data = Configure::read("{$ctrl}.{$actn}");
-        $data['controller'] = $ctrl;
-        $data['action'] = $actn;
-        return $data;
-    }
-    
-    /* Mostramos las pantalls de error personalizadas */
-    
     public function beforeRender() {        
         if ($this->name == 'CakeError') { 
             $this->layout = 'error';
         }
         
-        $this->set('CUSTOM_CSS',$this->css);
-        $this->set('CUSTOM_JS',$this->js);
-        $this->set('CUSTOM_JS_VARS',$this->jsVars);
-        
-        if($this->layout == 'default'){
-            $this->set('AdminActions',$this->getAdminActions());
-            $this->set('Admin',$this->Login->Admin());
-            $this->set('Action',$this->getActionData($this->params['controller'], $this->params['action']));
-            
-            $Root = Configure::read('App.rootUrl');
-            $this->set('Root',$this->getActionData($Root['controller'], $Root['action']));
-            $this->set('Menu',$this->getMenu());
-        }
-    }
-    
-    /* Obtiene las acciones del menu lateral. */
-    
-    private function getMenu(){
-        Configure::load('menu');        
-        Configure::load('sitemap');        
-        $menu = Configure::read('menu');
-        
-        foreach($menu as $id => $conf){
-            foreach($conf['actions'] as $i => $action){
-                $ctrl = $action[0];
-                $actn = $action[1];
-                $menu[$id]['actions'][$i] = $this->getActionData($ctrl, $actn);
-            }
-        }
-        
-        return $menu;
+        $this->set('CUSTOM_CSS',$this->getCss());
+        $this->set('CUSTOM_JS',$this->getJs());
+        $this->set('CUSTOM_JS_VARS',$this->getJsVars());
     }
     
     /* Presente un mensaje con informacion emergente al usuario, acerca de un

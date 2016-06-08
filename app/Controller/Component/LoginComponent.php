@@ -269,7 +269,7 @@ class LoginComponent extends Component{
             return $url;
         }
         
-        return '/';
+        return Configure::read('Login.redirect');
     }
     
     /* Guarda la URL a la que se intenta acceder sin tener login correcto. */
