@@ -38,8 +38,10 @@ var UI = {
         return renderUI;
     },
     done : function(react){
+        var callbackSwapper = react.props.swapper;
         var state = react.state;
         var list = state.list;
+        var target = state.target;
 
         var rows = list.map(function(item,i){
             return <HistoryItem
@@ -52,7 +54,10 @@ var UI = {
                 css_crawled={item.css_crawled}
                 html_crawled={item.html_crawled}
                 js_crawled={item.js_crawled}
-                img_crawled={item.img_crawled} />
+                img_crawled={item.img_crawled}
+                hash={item.root_hash}
+                target={target.name}
+                swapper={callbackSwapper}/>
         });
 
         var content = (

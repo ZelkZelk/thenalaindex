@@ -10,3 +10,10 @@ $config['Frontend.querystring.histories'] = [
     'target_id' => 'id',
     'page' => 'page'
 ];
+
+$config['Frontend.api.exploration'] = '/v1/exploration.json';
+$config['Frontend.url.exploration'] = '/exploracion/hash:%hash%/%target%.html';
+$config['Frontend.querystring.exploration'] = [
+    'hash' => 'hash',
+    'target' => 'target'
+];

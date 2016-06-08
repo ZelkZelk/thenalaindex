@@ -46,3 +46,4 @@ Router::connect('/v:version/:webservice.json', array('controller' => 'webservice
 
 Router::connect('/', array('controller' => 'frontend', 'action' => 'index'));
 Router::connect('/historico/id::id/pag::page/:target.html', array('controller' => 'frontend', 'action' => 'index','module' => 'histories'));
+Router::connect('/exploracion/hashhashid/:target.html', array('controller' => 'frontend', 'action' => 'index','module' => 'exploration'));

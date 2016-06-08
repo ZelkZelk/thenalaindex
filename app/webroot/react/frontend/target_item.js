@@ -4,7 +4,7 @@ var Modules = require('./modules.js');
 var TargetItem = React.createClass({
     module : 'histories',
     componentWillMount : function(){
-        Dispatcher.configure($ReactData.config,$ReactData.params);
+        Dispatcher.configure($ReactData.config);
     },
     propTypes: {
         id : React.PropTypes.number.isRequired,

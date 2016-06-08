@@ -638,7 +638,7 @@ var Dispatcher = require('./dispatcher.js');
 var HistoryItem = React.createClass({
     displayName: 'HistoryItem',
 
-    module: 'histories',
+    module: 'exploration',
     componentWillMount: function () {
         Dispatcher.configure($ReactData.config);
     },
@@ -651,7 +651,10 @@ var HistoryItem = React.createClass({
         css_crawled: React.PropTypes.number.isRequired,
         html_crawled: React.PropTypes.number.isRequired,
         js_crawled: React.PropTypes.number.isRequired,
-        img_crawled: React.PropTypes.number.isRequired
+        img_crawled: React.PropTypes.number.isRequired,
+        hash: React.PropTypes.string.isRequired,
+        target: React.PropTypes.string.isRequired,
+        swapper: React.PropTypes.func.isRequired
     },
     readableDate: function (rawDate) {
         var components = rawDate.split(/ /);
@@ -665,12 +668,24 @@ var HistoryItem = React.createClass({
 
         return day + "/" + month + "/" + year + " " + time;
     },
-    getData: function () {
+    getParams: function () {
         return {
             id: this.props.id,
-            module: this.module,
-            target: this.props.name
+            hash: this.props.hash,
+            target: this.props.target
         };
+    },
+    getModule: function () {
+        return this.module;
+    },
+    resolvUrl: function () {
+        var url = Dispatcher.resolvModuleUrl(this.getModule(), this.getParams());
+        return url;
+    },
+    dispatch: function (event) {
+        event.preventDefault();
+        Dispatcher.navigate(this.getModule(), this.getParams(), this.props.swapper);
+        return false;
     },
     render: function () {
         return React.createElement(
@@ -678,7 +693,7 @@ var HistoryItem = React.createClass({
             null,
             React.createElement(
                 'a',
-                null,
+                { href: this.resolvUrl(), onClick: this.dispatch },
                 React.createElement(
                     'h2',
                     null,
@@ -780,8 +795,10 @@ var UI = {
         return renderUI;
     },
     done: function (react) {
+        var callbackSwapper = react.props.swapper;
         var state = react.state;
         var list = state.list;
+        var target = state.target;
 
         var rows = list.map(function (item, i) {
             return React.createElement(HistoryItem, {
@@ -794,7 +811,10 @@ var UI = {
                 css_crawled: item.css_crawled,
                 html_crawled: item.html_crawled,
                 js_crawled: item.js_crawled,
-                img_crawled: item.img_crawled });
+                img_crawled: item.img_crawled,
+                hash: item.root_hash,
+                target: target.name,
+                swapper: callbackSwapper });
         });
 
         var content = React.createElement(
@@ -1039,7 +1059,7 @@ var TargetItem = React.createClass({
 
     module: 'histories',
     componentWillMount: function () {
-        Dispatcher.configure($ReactData.config, $ReactData.params);
+        Dispatcher.configure($ReactData.config);
     },
     propTypes: {
         id: React.PropTypes.number.isRequired,
