@@ -282,7 +282,7 @@ var Dispatcher = {
 
 module.exports = Dispatcher;
 
-},{"../node_modules/html5-history-api/history.js":14,"./modules.js":11}],5:[function(require,module,exports){
+},{"../node_modules/html5-history-api/history.js":19,"./modules.js":16}],5:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
 var HttpClient = require('../components/http_client.js');
@@ -526,7 +526,124 @@ var Engine = React.createClass({
 
 module.exports = Engine;
 
-},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":14,"./dispatcher.js":4}],6:[function(require,module,exports){
+},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":19,"./dispatcher.js":4}],6:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var HTMLViewer = require('./html_viewer.js');
+var HtmlUrlViewer = require('./html_url_viewer.js');
+var HTMLStats = require('./html_stats.js');
+var Modules = require('./modules.js');
+var HttpClient = require('../components/http_client.js');
+
+var UI = {
+    get: function (react) {
+        var target = react.props.target;
+        var url = react.props.url;
+        var swapper = react.swapper;
+        var link = react.props.link;
+        var meta = react.props.meta;
+
+        var renderUI = React.createElement(
+            'div',
+            { id: 'exploration', className: 'module_wrapper' },
+            React.createElement(
+                'h1',
+                { className: 'module_title' },
+                target.name,
+                React.createElement('br', null),
+                React.createElement(HtmlUrlViewer, { ref: function (ref) {
+                        react.urlViewer = ref;
+                    }, url: url.full_url })
+            ),
+            React.createElement(
+                'div',
+                { className: 'col-3-4' },
+                React.createElement(HTMLViewer, {
+                    link: link,
+                    swapper: swapper })
+            ),
+            React.createElement(
+                'div',
+                { className: 'col-1-4' },
+                React.createElement(HTMLStats, {
+                    ref: function (ref) {
+                        react.stats = ref;
+                    },
+                    meta: meta })
+            )
+        );
+
+        return renderUI;
+    }
+};
+
+var Exploration = React.createClass({
+    displayName: 'Exploration',
+
+    request: null,
+    urlViewer: null,
+    stats: null,
+    module: 'exploration',
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
+    },
+    propTypes: {
+        analysis: React.PropTypes.object.isRequired,
+        link: React.PropTypes.string.isRequired,
+        target: React.PropTypes.object.isRequired,
+        meta: React.PropTypes.object.isRequired,
+        url: React.PropTypes.object.isRequired
+    },
+    swapper: function (hash) {
+        var params = this.getParams(hash);
+        var module = this.getModule();
+        var callback = this.swapperCallback.bind(this, module, params);
+
+        Dispatcher.navigate(module, params, callback);
+    },
+    swapperCallback: function (module, params) {
+        var api = Dispatcher.resolvModuleApi(module, params);
+        this.ajaxOnStart();
+
+        if (this.request !== null) {
+            this.request.abort();
+        }
+
+        this.request = new HttpClient();
+
+        this.request.getJson(api, {
+            error: this.ajaxOnError.bind(this, module, params),
+            done: this.ajaxOnSuccess
+        });
+    },
+    ajaxOnStart: function () {
+        this.urlViewer.loading();
+    },
+    ajaxOnError: function (module, params) {
+        this.urlViewer.error(this.swapperCallback.bind(this, module, params));
+    },
+    ajaxOnSuccess: function (data) {
+        var url = data.url;
+        this.urlViewer.done(url.full_url);
+    },
+    getParams: function (hash) {
+        return Modules.exploration.params(this.props.target.id, hash, this.props.target.name);
+    },
+    getModule: function () {
+        return this.module;
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    }
+});
+
+module.exports = Exploration;
+
+},{"../components/http_client.js":1,"./dispatcher.js":4,"./html_stats.js":12,"./html_url_viewer.js":13,"./html_viewer.js":14,"./modules.js":16}],7:[function(require,module,exports){
 var Runner = require('../components/runner.js');
 var Dispatcher = require('./dispatcher.js');
 var Engine = require('./engine.js');
@@ -574,7 +691,7 @@ Runner.start(function () {
     var header = ReactDOM.render(UI.header(engine), document.getElementById('upper'));
 });
 
-},{"../components/runner.js":3,"./dispatcher.js":4,"./engine.js":5,"./header.js":7}],7:[function(require,module,exports){
+},{"../components/runner.js":3,"./dispatcher.js":4,"./engine.js":5,"./header.js":8}],8:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var Links = require('../components/links.js');
 
@@ -632,7 +749,7 @@ var Header = React.createClass({
 
 module.exports = Header;
 
-},{"../components/links.js":2,"./dispatcher.js":4}],8:[function(require,module,exports){
+},{"../components/links.js":2,"./dispatcher.js":4}],9:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 
 var HistoryItem = React.createClass({
@@ -654,6 +771,7 @@ var HistoryItem = React.createClass({
         img_crawled: React.PropTypes.number.isRequired,
         hash: React.PropTypes.string.isRequired,
         target: React.PropTypes.string.isRequired,
+        target_id: React.PropTypes.number.isRequired,
         swapper: React.PropTypes.func.isRequired
     },
     readableDate: function (rawDate) {
@@ -670,7 +788,7 @@ var HistoryItem = React.createClass({
     },
     getParams: function () {
         return {
-            id: this.props.id,
+            id: this.props.target_id,
             hash: this.props.hash,
             target: this.props.target
         };
@@ -740,7 +858,7 @@ var HistoryItem = React.createClass({
 
 module.exports = HistoryItem;
 
-},{"./dispatcher.js":4}],9:[function(require,module,exports){
+},{"./dispatcher.js":4}],10:[function(require,module,exports){
 var HistoryLoader = require('./history_loader.js');
 var HistoryItem = require('./history_item.js');
 var Dispatcher = require('./dispatcher.js');
@@ -814,6 +932,7 @@ var UI = {
                 img_crawled: item.img_crawled,
                 hash: item.root_hash,
                 target: target.name,
+                target_id: target.id,
                 swapper: callbackSwapper });
         });
 
@@ -931,7 +1050,7 @@ var HistoryList = React.createClass({
 
 module.exports = HistoryList;
 
-},{"./dispatcher.js":4,"./history_item.js":8,"./history_loader.js":10,"./modules.js":11}],10:[function(require,module,exports){
+},{"./dispatcher.js":4,"./history_item.js":9,"./history_loader.js":11,"./modules.js":16}],11:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 
 var UI = {
@@ -1014,7 +1133,404 @@ var HistoryLoader = React.createClass({
 
 module.exports = HistoryLoader;
 
-},{"./dispatcher.js":4}],11:[function(require,module,exports){
+},{"./dispatcher.js":4}],12:[function(require,module,exports){
+var UI = {
+    get: function (react) {
+        var meta = react.props.meta;
+
+        return React.createElement(
+            "div",
+            { className: "col" },
+            React.createElement(
+                "div",
+                { className: "stat-row" },
+                React.createElement(
+                    "div",
+                    { className: "stat-label" },
+                    "Fecha Exploración"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "stat-value" },
+                    react.getCreated()
+                )
+            ),
+            React.createElement(
+                "div",
+                { className: "stat-row" },
+                React.createElement(
+                    "div",
+                    { className: "stat-label" },
+                    "Tamaño"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "stat-value" },
+                    meta.size,
+                    " bytes"
+                )
+            ),
+            React.createElement(
+                "div",
+                { className: "stat-row" },
+                React.createElement(
+                    "div",
+                    { className: "stat-label" },
+                    "MIME"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "stat-value" },
+                    meta.mime
+                )
+            ),
+            React.createElement(
+                "div",
+                { className: "stat-row" },
+                React.createElement(
+                    "div",
+                    { className: "stat-label" },
+                    "Checksum"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "stat-value" },
+                    meta.checksum
+                )
+            ),
+            React.createElement(
+                "div",
+                { className: "stat-row" },
+                React.createElement(
+                    "div",
+                    { className: "stat-label" },
+                    "Hash"
+                ),
+                React.createElement(
+                    "div",
+                    { className: "stat-value" },
+                    meta.hash
+                )
+            )
+        );
+    }
+};
+
+var HTMLStats = React.createClass({
+    displayName: "HTMLStats",
+
+    propTypes: {
+        meta: React.PropTypes.object.isRequired
+    },
+    getCreated: function () {
+        var created = this.props.meta.created;
+        var datetime = created.split(' ');
+        var date = datetime[0].split('-');
+
+        return date[2] + '/' + date[1] + '/' + date[0];
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    }
+});
+
+module.exports = HTMLStats;
+
+},{}],13:[function(require,module,exports){
+var States = {
+    loading: 0,
+    done: 1,
+    error: 2
+};
+
+var UI = {
+    done: function (react) {
+        var url = react.state.url;
+
+        return React.createElement(
+            "a",
+            { href: url, target: "_blank" },
+            url
+        );
+    },
+    loading: function (react) {
+        return React.createElement(
+            "span",
+            null,
+            "Obteniendo URL..."
+        );
+    },
+    error: function (react) {
+        var clicker = react.state.callback;
+
+        return React.createElement(
+            "span",
+            null,
+            "Error en la conexión ",
+            React.createElement(
+                "button",
+                { onClick: clicker },
+                "R E I N T E N T A R "
+            )
+        );
+    }
+};
+
+var HtmlUrlViewer = React.createClass({
+    displayName: "HtmlUrlViewer",
+
+    propTypes: {
+        url: React.PropTypes.string.isRequired
+    },
+    getInitialState: function () {
+        return {
+            url: this.props.url,
+            state: States.done
+        };
+    },
+    done: function (url) {
+        this.setState({
+            url: url,
+            state: States.done
+        });
+    },
+    loading: function () {
+        this.setState({
+            state: States.loading
+        });
+    },
+    error: function (callback) {
+        this.setState({
+            state: States.error,
+            callback: callback
+        });
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = React.createElement(
+            "span",
+            null,
+            "View not set yet! "
+        );
+
+        switch (this.state.state) {
+            case States.loading:
+                renderUI = UI.loading(this);
+                break;
+            case States.done:
+                renderUI = UI.done(this);
+                break;
+            case States.error:
+                renderUI = UI.error(this);
+                break;
+        }
+
+        return renderUI;
+    }
+});
+
+module.exports = HtmlUrlViewer;
+
+},{}],14:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var HTMLViewerLoader = require('./html_viewer_loader.js');
+
+var UI = {
+    get: function (react) {
+        var link = react.props.link;
+        var swapper = react.props.swapper;
+
+        return React.createElement(
+            'div',
+            { className: 'col' },
+            React.createElement('iframe', { ref: function (ref) {
+                    react.iframe = ref;
+                }, src: link, onLoad: react.frameCallback }),
+            React.createElement(HTMLViewerLoader, { ref: function (ref) {
+                    react.loader = ref;
+                } })
+        );
+    }
+};
+
+var HTMLViewer = React.createClass({
+    displayName: 'HTMLViewer',
+
+    iframe: null,
+    loader: null,
+    module: 'exploration',
+    propTypes: {
+        link: React.PropTypes.string.isRequired,
+        swapper: React.PropTypes.func.isRequired
+    },
+    componentDidMount: function () {
+        var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        this.iframe.style.height = h + 'px';
+    },
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    },
+    frameCallback: function (event) {
+        var iframe = event.target;
+        var document = iframe.contentDocument || iframe.contentWindow.document;
+        var links = document.getElementsByTagName('A');
+
+        for (var i in links) {
+            var link = links[i];
+
+            if (typeof link.getAttribute !== 'undefined') {
+                var href = link.getAttribute('href');
+
+                if (this.isNala(link)) {
+                    link.onclick = this.linkCallback;
+                } else {
+                    link.setAttribute('target', '_blank');
+                }
+            }
+        }
+
+        iframe.style.display = 'block';
+        this.loader.loaded();
+    },
+    getModule: function () {
+        return this.module;
+    },
+    linkCallback: function (event) {
+        event.preventDefault();
+        var link = event.target;
+
+        while (link !== null && link.tagName !== 'A') {
+            link = link.parentNode;
+        }
+
+        if (link == null) {
+            return false;
+        }
+
+        var hash = link.getAttribute('data-nalaid');
+        this.props.swapper(hash);
+
+        return false;
+    },
+    isNala: function (link) {
+        var hash = link.getAttribute('data-nalaid');
+
+        if (typeof hash === 'undefined') {
+            return false;
+        }
+
+        if (hash === null) {
+            return false;
+        }
+
+        if (hash === '') {
+            return false;
+        }
+
+        return true;
+    }
+
+    // TODO: agregar estado de 'cargando' con un DIV que cubra el IFRAME
+    // TODO: un link NALASRC debe recargar el React
+    // TODO: un link EXTERNAL debe agregar abrirse en un nuevo TAB
+
+});
+
+module.exports = HTMLViewer;
+
+},{"./dispatcher.js":4,"./html_viewer_loader.js":15}],15:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+
+var States = {
+    loading: 0,
+    loaded: 1
+};
+
+var UI = {
+    loading: function (react) {
+        return React.createElement(
+            'div',
+            { id: 'html_viewer_loading', className: 'loading', ref: function (ref) {
+                    react.loader = ref;
+                } },
+            React.createElement(
+                'div',
+                { className: 'message' },
+                'Recuperando página indexada...'
+            )
+        );
+    },
+    loaded: function (react) {
+        return React.createElement(
+            'span',
+            null,
+            ' '
+        );
+    }
+};
+
+var HTMLViewerLoader = React.createClass({
+    displayName: 'HTMLViewerLoader',
+
+    propTypes: {},
+    getInitialState: function () {
+        return {
+            state: States.loading
+        };
+    },
+    componentDidMount: function () {
+        var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+        var loading = document.getElementById('html_viewer_loading');
+        loading.style.height = h + 'px';
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = React.createElement(
+            'div',
+            null,
+            ' View not set Yet! '
+        );
+
+        switch (this.state.state) {
+            case States.loading:
+                renderUI = UI.loading(this);
+                break;
+            case States.loaded:
+                renderUI = UI.loaded(this);
+                break;
+        }
+
+        return renderUI;
+    },
+    loaded: function () {
+        this.setState({
+            state: States.loaded
+        });
+    }
+});
+
+module.exports = HTMLViewerLoader;
+
+},{"./dispatcher.js":4}],16:[function(require,module,exports){
 var Modules = {
     index: {
         render: function (data, swapper) {
@@ -1045,12 +1561,37 @@ var Modules = {
             };
         },
         name: 'histories'
+    },
+    exploration: {
+        render: function (data, swapper) {
+            var Exploration = require('./exploration.js');
+            var analysis = data.analysis;
+            var link = data.link;
+            var target = data.target;
+            var meta = data.meta;
+            var url = data.url;
+
+            return React.createElement(Exploration, {
+                analysis: analysis,
+                link: link,
+                target: target,
+                meta: meta,
+                url: url });
+        },
+        params: function (id, hash, target) {
+            return {
+                id: id,
+                target: target,
+                hash: hash
+            };
+        },
+        name: 'exploration'
     }
 };
 
 module.exports = Modules;
 
-},{"./history_list.js":9,"./target_list.js":13}],12:[function(require,module,exports){
+},{"./exploration.js":6,"./history_list.js":10,"./target_list.js":18}],17:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var Modules = require('./modules.js');
 
@@ -1164,7 +1705,7 @@ var TargetItem = React.createClass({
 
 module.exports = TargetItem;
 
-},{"./dispatcher.js":4,"./modules.js":11}],13:[function(require,module,exports){
+},{"./dispatcher.js":4,"./modules.js":16}],18:[function(require,module,exports){
 var TargetItem = require('./target_item.js');
 
 var States = {
@@ -1273,7 +1814,7 @@ var TargetList = React.createClass({
 
 module.exports = TargetList;
 
-},{"./target_item.js":12}],14:[function(require,module,exports){
+},{"./target_item.js":17}],19:[function(require,module,exports){
 /*!
  * History API JavaScript Library v4.2.7
  *
@@ -2396,4 +2937,4 @@ module.exports = TargetList;
   return historyObject;
 });
 
-},{}]},{},[6]);
+},{}]},{},[7]);

@@ -274,5 +274,37 @@ class CrawlerLog extends AppModel {
         ]);
     }
     
+    /**
+     * Carga el ID
+     */
     
+    public function loadId($id){
+        $schema = $this->defaultSchema;
+        unset($schema['log']);
+        
+        $alias = $this->alias;
+        $fieldsAux = '';
+        
+        foreach($schema as $field => $data){
+            $fieldsAux .= "{$alias}.{$field},";
+        }
+        
+        $fields = substr($fieldsAux, 0, strlen($fieldsAux) - 1);
+        
+        $cnd = [];
+        $cnd['CrawlerLog.id'] = $id;
+        
+        $data = $this->find('first',[
+            'conditions' => $cnd,
+            'fields' => $fields
+        ]);
+        
+        if($data){
+            $blob = $data[$alias];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+    }
 }

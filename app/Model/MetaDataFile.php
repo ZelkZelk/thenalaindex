@@ -363,7 +363,7 @@ class MetaDataFile extends AppModel {
             $this->loadArray($blob);
         }
         
-        return $data;
+        return $data ? true : false;
     }
     
     /**
