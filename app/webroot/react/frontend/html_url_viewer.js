@@ -14,14 +14,14 @@ var UI = {
     },
     loading : function(react){
         return (
-            <span>Obteniendo URL original...</span>
+            <span className="subtitle">Obteniendo URL original...</span>
         );
     },
     error : function(react){
         var clicker = react.state.callback;
 
         return (
-            <span>Error en la conexión <button onClick={clicker}>R E I N T E N T A R </button></span>
+            <span className="subtitle">Error en la conexión</span>
         );
     },
 };

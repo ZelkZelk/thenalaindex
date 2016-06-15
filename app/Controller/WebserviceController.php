@@ -48,6 +48,7 @@ class WebserviceController extends Controller {
     private $Webservice;
     
     public function index(){
+//        throw new BadRequestException();
         $this->version = $this->params['version'];
         $this->webservice = $this->params['webservice'];
         $this->extra = $this->params['extra'];

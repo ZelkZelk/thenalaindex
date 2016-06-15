@@ -105,7 +105,7 @@ div.wrapper h1.module_title {
   border-left: #103054 20px solid;
   margin: 30px;
   padding-left: 20px; }
-  div.wrapper h1.module_title a, div.wrapper h1.module_title span {
+  div.wrapper h1.module_title a, div.wrapper h1.module_title span.subtitle {
     font-size: 0.7em;
     font-weight: normal;
     font-style: italic;

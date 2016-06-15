@@ -8,7 +8,7 @@ var UI = {
 
         return (
             <div className="col">
-                <iframe ref={function(ref){ react.iframe = ref; }} src={link} onLoad={react.frameCallback} />
+                <iframe ref={function(ref){ react.iframe = ref; }} onLoad={react.frameCallback} />
                 <HTMLViewerLoader ref={function(ref){ react.loader = ref; }} />
             </div>
         );
@@ -26,6 +26,13 @@ var HTMLViewer = React.createClass({
     componentDidMount: function() {
         var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         this.iframe.style.height = h + 'px';
+        this.frameRelocation(this.props.link);
+    },
+    frameRelocation : function(url){
+        var iframe = this.iframe;
+        var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+        iframeDoc.location.replace(url);
     },
     componentWillMount : function(){
         Dispatcher.configure($ReactData.config);
@@ -65,21 +72,36 @@ var HTMLViewer = React.createClass({
         return this.module;
     },
     linkCallback : function(event){
-        event.preventDefault();
         var link = event.target;
 
         while (link !== null && link.tagName !== 'A') {
              link = link.parentNode;
         }
 
-        if(link == null){
+        if(link !== null){
+            var hash = link.getAttribute('data-nalaid');
+
+            if(this.isSwappable(link)){
+                var url = link.getAttribute('href');
+                this.frameRelocation(url);
+                this.props.swapper(hash);
+                
+                event.preventDefault();
+                return false;
+
+            }
+        }
+
+        return true;
+    },
+    isSwappable : function(link){
+        var html = link.getAttribute('data-ishtml');
+
+        if(typeof html === 'undefined'){
             return false;
         }
 
-        var hash = link.getAttribute('data-nalaid');
-        this.props.swapper(hash);
-
-        return false;
+        return html;
     },
     isNala : function(link){
         var hash = link.getAttribute('data-nalaid');
@@ -98,11 +120,6 @@ var HTMLViewer = React.createClass({
 
         return true;
     }
-
-    // TODO: agregar estado de 'cargando' con un DIV que cubra el IFRAME
-    // TODO: un link NALASRC debe recargar el React
-    // TODO: un link EXTERNAL debe agregar abrirse en un nuevo TAB
-
 });
 
 module.exports = HTMLViewer

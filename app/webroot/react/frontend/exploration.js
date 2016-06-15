@@ -48,6 +48,11 @@ var Exploration = React.createClass({
     componentWillMount : function(){
         Dispatcher.configure($ReactData.config);
     },
+    componentWillUnmount : function(){
+        if(this.request !== null){
+            this.request.abort();
+        }
+    },
     propTypes : {
         analysis : React.PropTypes.object.isRequired,
         link : React.PropTypes.string.isRequired,
@@ -79,13 +84,20 @@ var Exploration = React.createClass({
     },
     ajaxOnStart : function(){
         this.urlViewer.loading();
+        this.stats.loading();
     },
     ajaxOnError : function(module,params){
-        this.urlViewer.error(this.swapperCallback.bind(this,module,params));
+        var callback = this.swapperCallback.bind(this,module,params);
+
+        this.urlViewer.error(callback);
+        this.stats.error(callback);
     },
     ajaxOnSuccess : function(data){
         var url = data.url;
+        var meta = data.meta;
+
         this.urlViewer.done(url.full_url);
+        this.stats.done(meta);
     },
     getParams : function(hash){
         return Modules.exploration.params(this.props.target.id,hash,this.props.target.name);

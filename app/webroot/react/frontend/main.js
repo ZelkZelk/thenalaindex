@@ -586,6 +586,11 @@ var Exploration = React.createClass({
     componentWillMount: function () {
         Dispatcher.configure($ReactData.config);
     },
+    componentWillUnmount: function () {
+        if (this.request !== null) {
+            this.request.abort();
+        }
+    },
     propTypes: {
         analysis: React.PropTypes.object.isRequired,
         link: React.PropTypes.string.isRequired,
@@ -617,13 +622,20 @@ var Exploration = React.createClass({
     },
     ajaxOnStart: function () {
         this.urlViewer.loading();
+        this.stats.loading();
     },
     ajaxOnError: function (module, params) {
-        this.urlViewer.error(this.swapperCallback.bind(this, module, params));
+        var callback = this.swapperCallback.bind(this, module, params);
+
+        this.urlViewer.error(callback);
+        this.stats.error(callback);
     },
     ajaxOnSuccess: function (data) {
         var url = data.url;
+        var meta = data.meta;
+
         this.urlViewer.done(url.full_url);
+        this.stats.done(meta);
     },
     getParams: function (hash) {
         return Modules.exploration.params(this.props.target.id, hash, this.props.target.name);
@@ -1134,9 +1146,17 @@ var HistoryLoader = React.createClass({
 module.exports = HistoryLoader;
 
 },{"./dispatcher.js":4}],12:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+
+var States = {
+    loading: 0,
+    done: 1,
+    error: 2
+};
+
 var UI = {
-    get: function (react) {
-        var meta = react.props.meta;
+    done: function (react) {
+        var meta = react.state.meta;
 
         return React.createElement(
             "div",
@@ -1213,6 +1233,27 @@ var UI = {
                 )
             )
         );
+    },
+    loading: function (react) {
+        return React.createElement(
+            "span",
+            null,
+            "Obteniendo Metadatos de la URL..."
+        );
+    },
+    error: function (react) {
+        var clicker = react.state.callback;
+
+        return React.createElement(
+            "span",
+            null,
+            "Error en la conexión ",
+            React.createElement(
+                "button",
+                { onClick: clicker },
+                "R E I N T E N T A R "
+            )
+        );
     }
 };
 
@@ -1221,6 +1262,12 @@ var HTMLStats = React.createClass({
 
     propTypes: {
         meta: React.PropTypes.object.isRequired
+    },
+    getInitialState: function () {
+        return {
+            meta: this.props.meta,
+            state: States.done
+        };
     },
     getCreated: function () {
         var created = this.props.meta.created;
@@ -1233,15 +1280,49 @@ var HTMLStats = React.createClass({
         var renderUI = this.resolvRenderUI();
         return renderUI;
     },
+    done: function (meta) {
+        this.setState({
+            meta: meta,
+            state: States.done
+        });
+    },
+    loading: function () {
+        this.setState({
+            state: States.loading
+        });
+    },
+    error: function (callback) {
+        this.setState({
+            state: States.error,
+            callback: callback
+        });
+    },
     resolvRenderUI: function () {
-        var renderUI = UI.get(this);
+        var renderUI = React.createElement(
+            "div",
+            null,
+            " View not set yet! "
+        );
+
+        switch (this.state.state) {
+            case States.done:
+                renderUI = UI.done(this);
+                break;
+            case States.loading:
+                renderUI = UI.loading(this);
+                break;
+            case States.error:
+                renderUI = UI.error(this);
+                break;
+        }
+
         return renderUI;
     }
 });
 
 module.exports = HTMLStats;
 
-},{}],13:[function(require,module,exports){
+},{"./dispatcher.js":4}],13:[function(require,module,exports){
 var States = {
     loading: 0,
     done: 1,
@@ -1261,8 +1342,8 @@ var UI = {
     loading: function (react) {
         return React.createElement(
             "span",
-            null,
-            "Obteniendo URL..."
+            { className: "subtitle" },
+            "Obteniendo URL original..."
         );
     },
     error: function (react) {
@@ -1270,13 +1351,8 @@ var UI = {
 
         return React.createElement(
             "span",
-            null,
-            "Error en la conexión ",
-            React.createElement(
-                "button",
-                { onClick: clicker },
-                "R E I N T E N T A R "
-            )
+            { className: "subtitle" },
+            "Error en la conexión"
         );
     }
 };
@@ -1353,7 +1429,7 @@ var UI = {
             { className: 'col' },
             React.createElement('iframe', { ref: function (ref) {
                     react.iframe = ref;
-                }, src: link, onLoad: react.frameCallback }),
+                }, onLoad: react.frameCallback }),
             React.createElement(HTMLViewerLoader, { ref: function (ref) {
                     react.loader = ref;
                 } })
@@ -1374,6 +1450,13 @@ var HTMLViewer = React.createClass({
     componentDidMount: function () {
         var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
         this.iframe.style.height = h + 'px';
+        this.frameRelocation(this.props.link);
+    },
+    frameRelocation: function (url) {
+        var iframe = this.iframe;
+        var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+        iframeDoc.location.replace(url);
     },
     componentWillMount: function () {
         Dispatcher.configure($ReactData.config);
@@ -1412,21 +1495,35 @@ var HTMLViewer = React.createClass({
         return this.module;
     },
     linkCallback: function (event) {
-        event.preventDefault();
         var link = event.target;
 
         while (link !== null && link.tagName !== 'A') {
             link = link.parentNode;
         }
 
-        if (link == null) {
+        if (link !== null) {
+            var hash = link.getAttribute('data-nalaid');
+
+            if (this.isSwappable(link)) {
+                var url = link.getAttribute('href');
+                this.frameRelocation(url);
+                this.props.swapper(hash);
+
+                event.preventDefault();
+                return false;
+            }
+        }
+
+        return true;
+    },
+    isSwappable: function (link) {
+        var html = link.getAttribute('data-ishtml');
+
+        if (typeof html === 'undefined') {
             return false;
         }
 
-        var hash = link.getAttribute('data-nalaid');
-        this.props.swapper(hash);
-
-        return false;
+        return html;
     },
     isNala: function (link) {
         var hash = link.getAttribute('data-nalaid');
@@ -1445,11 +1542,6 @@ var HTMLViewer = React.createClass({
 
         return true;
     }
-
-    // TODO: agregar estado de 'cargando' con un DIV que cubra el IFRAME
-    // TODO: un link NALASRC debe recargar el React
-    // TODO: un link EXTERNAL debe agregar abrirse en un nuevo TAB
-
 });
 
 module.exports = HTMLViewer;
