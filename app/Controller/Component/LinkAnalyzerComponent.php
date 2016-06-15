@@ -299,6 +299,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             }
             
             if(strtolower($node->tagName) === 'a'){
+                $this->MetaDataFile->loadHash($hash);
                 $isHtml = $this->MetaDataFile->isHtml();
                 $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
             }
