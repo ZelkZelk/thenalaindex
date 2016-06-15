@@ -55,6 +55,7 @@ class WebserviceVersion1Component extends Component{
             foreach($logs as $i => $log){
                 $blob = $log[$alias];
                 $blob['index'] = ($page - 1) * $limit + ($i + 1);
+                $blob['root_hash'] = trim($blob['root_hash']);
                 $histories[] = $blob;
             }
             
@@ -69,5 +70,62 @@ class WebserviceVersion1Component extends Component{
         else{
             throw new NotFoundException("Target@{$id} not found");
         }
+    }
+    
+    /**
+     * Obtiene la info de exploracion.
+     * 
+     * Incluye:
+     * 
+     *      * CrawlerLog Data
+     *      * Link a la vista de pagina
+     *      * Data de analisis
+     */
+    
+    public function exploration(){
+        App::import('Model','Target');
+        $Target = new Target();
+        $id = $this->Controller->getWebserviceData('target_id');
+        
+        if($Target->loadFromId($id) === false){
+            throw new NotFoundException("Target@{$id} not found");
+        }
+        
+        App::import('Model','MetaDataFile');
+        $MetaDataFile = new MetaDataFile();
+        $hash = $this->Controller->getWebserviceData('hash');
+        
+        if($MetaDataFile->loadHash($hash) === false){
+            throw new NotFoundException("MetaDataFile@hash:{$hash} not found");
+        }
+        
+        App::import('Model','Url');
+        $Url = new Url();
+        $url_id = $MetaDataFile->Data()->read('url_id');
+        
+        if($Url->loadFromId($url_id) === false){
+            throw new NotFoundException("Url@:{$url_id} not found");
+        }
+        
+        App::import('Model','CrawlerLog');
+        $CrawlerLog = new CrawlerLog();
+        $crawler_log_id = $MetaDataFile->Data()->read('crawler_log_id');
+        
+        if($CrawlerLog->loadId($crawler_log_id) === false){
+            throw new NotFoundException("CrawlerLog:{$crawler_log_id} not found");
+        }
+        
+        Configure::load('analysis');
+        $link = Configure::read('Analysis.cdn_webservice') . $hash;
+        
+        $output = [
+            'link' => $link,
+            'analysis' => [],
+            'target' => $Target->Data()->dump(),
+            'meta' => $MetaDataFile->Data()->dump(),
+            'url' => $Url->Data()->dump()
+        ];
+        
+        $this->Controller->pushOutput($output);
     }
 }

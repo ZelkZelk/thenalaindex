@@ -17,6 +17,7 @@ var HistoryItem = React.createClass({
         img_crawled : React.PropTypes.number.isRequired,
         hash : React.PropTypes.string.isRequired,
         target : React.PropTypes.string.isRequired,
+        target_id : React.PropTypes.number.isRequired,
         swapper : React.PropTypes.func.isRequired,
     },
     readableDate : function(rawDate){
@@ -33,7 +34,7 @@ var HistoryItem = React.createClass({
     },
     getParams : function(){
         return {
-            id : this.props.id,
+            id : this.props.target_id,
             hash : this.props.hash,
             target : this.props.target
         };

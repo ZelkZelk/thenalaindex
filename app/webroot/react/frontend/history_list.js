@@ -57,6 +57,7 @@ var UI = {
                 img_crawled={item.img_crawled}
                 hash={item.root_hash}
                 target={target.name}
+                target_id={target.id}
                 swapper={callbackSwapper}/>
         });
 

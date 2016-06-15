@@ -289,7 +289,7 @@ class CrawlerLog extends AppModel {
             $fieldsAux .= "{$alias}.{$field},";
         }
         
-        $fields = substr($fieldsAux, 0, strlen($fields) - 1);
+        $fields = substr($fieldsAux, 0, strlen($fieldsAux) - 1);
         
         $cnd = [];
         $cnd['CrawlerLog.id'] = $id;

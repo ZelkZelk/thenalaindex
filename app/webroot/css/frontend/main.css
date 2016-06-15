@@ -72,6 +72,32 @@ div.wrapper div.module_wrapper {
     margin-left: 30px;
     margin-right: 30px;
     margin-top: 30px; }
+  div.wrapper div.module_wrapper div.col-1-4 {
+    width: 35%;
+    display: inline-block;
+    vertical-align: top; }
+    div.wrapper div.module_wrapper div.col-1-4 div.col {
+      padding: 0px 30px;
+      padding-left: 0px; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .stat-row {
+        margin-bottom: 10px; }
+        div.wrapper div.module_wrapper div.col-1-4 div.col .stat-row .stat-label {
+          font-weight: bold; }
+  div.wrapper div.module_wrapper div.col-3-4 {
+    width: 65%;
+    display: inline-block;
+    vertical-align: top; }
+    div.wrapper div.module_wrapper div.col-3-4 div.col {
+      padding: 0px 30px; }
+      div.wrapper div.module_wrapper div.col-3-4 div.col iframe {
+        width: 100%;
+        border: #103054 1px dotted;
+        display: none; }
+      div.wrapper div.module_wrapper div.col-3-4 div.col div.loading {
+        width: 100%;
+        border: #103054 1px dotted; }
+        div.wrapper div.module_wrapper div.col-3-4 div.col div.loading .message {
+          padding: 10px; }
 div.wrapper h1.module_title {
   font-size: 1.2em;
   font-weight: bold;
@@ -79,6 +105,11 @@ div.wrapper h1.module_title {
   border-left: #103054 20px solid;
   margin: 30px;
   padding-left: 20px; }
+  div.wrapper h1.module_title a, div.wrapper h1.module_title span.subtitle {
+    font-size: 0.7em;
+    font-weight: normal;
+    font-style: italic;
+    color: #333344; }
 div.wrapper ul.module_list {
   text-align: left;
   margin-bottom: 30px;
