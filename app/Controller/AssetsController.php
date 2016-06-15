@@ -42,4 +42,4 @@ class AssetsController extends AppController {
         
         return $hash;
     }
-}
+} 
