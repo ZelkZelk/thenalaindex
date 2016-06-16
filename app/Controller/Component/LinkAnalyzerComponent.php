@@ -271,6 +271,11 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
      *      *   data-nalaid="$hash"
      *      *   data-nalasource="$url"
      * 
+     * Si la etiqueta es A (hipevinculo) ademas se agrega:
+     * 
+     *      * data-ishtml="true|false" , este atributo determina si el hipervinculo debe
+     *          seguirse (contiene un doc html) o bien descargarse (otro tipo de documento).
+     * 
      * URL del webservice feeder (el webservice que transforma hash en recurso almacenado)
      * Config@analysis:Analysis.cdn_webservice
      */
@@ -288,15 +293,22 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             $this->replaceUrl($node,$replace_url,$url,$hash);
             $this->addHash($hash);
             
-            if($node->tagName !== 'style'){
+            if(strtolower($node->tagName) !== 'style'){
                 $node->setAttribute(self::$DATA_NALA_ID,$hash);
                 $node->setAttribute(self::$DATA_NALA_SOURCE,$url);
+            }
+            
+            if(strtolower($node->tagName) === 'a'){
+                $this->MetaDataFile->loadHash($hash);
+                $isHtml = $this->MetaDataFile->isHtml();
+                $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
             }
         }
     }
     
     public static $DATA_NALA_SOURCE = 'data-nalasource';
     public static $DATA_NALA_ID = 'data-nalaid';
+    public static $DATA_IS_HTML = 'data-ishtml';
     
     /* Reemplaza la url del nodo dependiendo del TAG */
     

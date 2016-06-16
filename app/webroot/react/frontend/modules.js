@@ -35,6 +35,33 @@ var Modules = {
         },
         name : 'histories'
     },
+    exploration : {
+        render : function(data,swapper){
+            var Exploration = require('./exploration.js');
+            var analysis = data.analysis;
+            var link = data.link;
+            var target = data.target;
+            var meta = data.meta;
+            var url = data.url;
+
+            return (
+                 <Exploration
+                    analysis={analysis}
+                    link={link}
+                    target={target}
+                    meta={meta}
+                    url={url}/>
+            );
+        },
+        params : function(id,hash,target){
+            return {
+                id : id,
+                target : target,
+                hash : hash
+            };
+        },
+        name : 'exploration'
+    },
 };
 
 module.exports = Modules;

@@ -20,10 +20,11 @@ class RootHashShell extends AppShell {
         $unRooted = $CrawlerLog->findUnRooted();
         
         foreach($unRooted as $log){
-            $CrawlerLog->loadArray($log['CrawlerLog']);
-            $hash = $MetaDataFile->getFirstHash($CrawlerLog);
+            $C = new CrawlerLog();
+            $C->loadArray($log['CrawlerLog']);
+            $hash = $MetaDataFile->getFirstHash($C);
             
-            echo "LOG: {$CrawlerLog->id} \n";
+            echo "LOG: {$C->id} \n";
             
             if($hash === false){
                 echo "\t HASH: false \n";
@@ -32,8 +33,8 @@ class RootHashShell extends AppShell {
             
             echo "\t HASH: {$hash} \n";
             
-            $CrawlerLog->setRootHash($hash);
-            $CrawlerLog->store();
+            $C->setRootHash($hash);
+            $C->store();
         }
     }
 }

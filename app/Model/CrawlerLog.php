@@ -274,5 +274,63 @@ class CrawlerLog extends AppModel {
         ]);
     }
     
+    /**
+     * Carga el ID
+     */
+    
+    public function loadId($id){
+        $schema = $this->defaultSchema;
+        unset($schema['log']);
+        
+        $alias = $this->alias;
+        $fieldsAux = '';
+        
+        foreach($schema as $field => $data){
+            $fieldsAux .= "{$alias}.{$field},";
+        }
+        
+        $fields = substr($fieldsAux, 0, strlen($fieldsAux) - 1);
+        
+        $cnd = [];
+        $cnd['CrawlerLog.id'] = $id;
+        
+        $data = $this->find('first',[
+            'conditions' => $cnd,
+            'fields' => $fields
+        ]);
+        
+        if($data){
+            $blob = $data[$alias];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /* Busca todos los crawlers logs finalizados correctamente */
+    
+    public function findDone(){
+        $logs = $this->find('all',[
+            'order' => 'CrawlerLog.id desc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
+            ],
+            'conditions' => [
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL
+            ]
+        ]);
+        
+        return $logs;
+    }
     
 }

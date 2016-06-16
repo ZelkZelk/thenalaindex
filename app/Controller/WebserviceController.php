@@ -48,6 +48,7 @@ class WebserviceController extends Controller {
     private $Webservice;
     
     public function index(){
+//        throw new BadRequestException();
         $this->version = $this->params['version'];
         $this->webservice = $this->params['webservice'];
         $this->extra = $this->params['extra'];
@@ -67,7 +68,7 @@ class WebserviceController extends Controller {
         
         if(method_exists($this->Webservice, $method)){
             if($this->parseConf()){
-                $this->Webservice->$method();
+                $this->exec($method);
             }
             else{
                 throw new ForbiddenException();
@@ -75,6 +76,16 @@ class WebserviceController extends Controller {
         }
         else{
             throw new NotFoundException("$method() not found");
+        }
+    }
+    
+    private function exec($method){
+        try{
+            $this->Webservice->$method();
+        }
+        catch(Exception $e){
+            header("X-WebService-Exception: {$e->getMessage()}");
+            throw $e;
         }
     }
     
