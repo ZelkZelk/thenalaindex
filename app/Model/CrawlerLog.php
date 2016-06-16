@@ -307,4 +307,30 @@ class CrawlerLog extends AppModel {
         
         return false;
     }
+    
+    /* Busca todos los crawlers logs finalizados correctamente */
+    
+    public function findDone(){
+        $logs = $this->find('all',[
+            'order' => 'CrawlerLog.id desc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
+            ],
+            'conditions' => [
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL
+            ]
+        ]);
+        
+        return $logs;
+    }
+    
 }

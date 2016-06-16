@@ -22,6 +22,8 @@ class AssetsController extends AppController {
             throw new NotFoundException();
         }
         
+        header('Content-Type: ' . $this->MetaDataFile->Data()->read('mime'));
+        
         ob_start();
         ob_clean();
         echo $this->DataFile->getFile();
