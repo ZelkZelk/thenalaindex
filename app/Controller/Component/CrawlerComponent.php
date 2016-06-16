@@ -15,6 +15,7 @@ App::uses('RobotsTxtComponent', 'Controller/Component');
 App::uses('ScrapperComponent', 'Controller/Component');
 App::uses('UrlNormalizerComponent', 'Controller/Component');
 App::uses('LinkAnalyzerComponent', 'Controller/Component');
+App::uses('FullTextAnalyzerComponent', 'Controller/Component');
 
 /* Este componente se encarga de la exploracion del Target especifico */
 
@@ -170,10 +171,13 @@ class CrawlerComponent extends Component{
      *      10. Inicia el Url Normalizer
      *      11. Inicia el log para el Analizador de Vinculos
      *      12. Inicia el Analizador de Vinculos
-     *      13. Encola la URL raiz
-     *      14. Parsea el robots.txt de la URL raiz
-     *      15. Comienza a procesar la cola de exploracion
-     *      16. Realiza el escaneo y analisis de hipervinculos en documentos HTML
+     *      13. Inicia el log para el Analizador de Texto Completo
+     *      14. Inicia el Analizador de Texto Completo
+     *      15. Encola la URL raiz
+     *      16. Parsea el robots.txt de la URL raiz
+     *      17. Comienza a procesar la cola de exploracion
+     *      18. Realiza el escaneo y analisis de hipervinculos en documentos HTML
+     *      19. Realiza el escaneo y analisis de indices de texto completo en documentos HTML
      * */
     
     private function crawl(){
@@ -189,10 +193,50 @@ class CrawlerComponent extends Component{
         $this->initUrlNormalizer();
         $this->initLinkAnalyzerLog();
         $this->initLinkAnalyzer();
+        $this->initFullTextAnalyzerLog();
+        $this->initFullTextAnalyzer();
         $this->enqueueRoot();
         $this->fetchRootRobots();
         $this->processQueue();
         $this->linkAnalysis();
+        $this->fullTextAnalysis();
+    }
+    
+    /* Realiza el analisis de texto completo de cada documento HTML almacenado*/
+    
+    private function fullTextAnalysis(){    
+        $id = $this->CrawlerLog->id;
+        $this->FullTextAnalyzer->scanner($id);
+    }
+    /* Incia el log del componente LinkAnalyzer, cada Target tiene su archivo separado
+     * de log.
+     */
+    
+    private function initFullTextAnalyzerLog(){
+        $name = $this->Target->Data()->read('name');
+        $file = 'fts-' . strtolower($name);
+        
+        CakeLog::config($file, array(
+            'engine' => 'FileLog',
+            'types' => [ 'info' ],
+            'scopes' => [ 'fts' ],
+            'file' => $file
+        ));    
+    }
+    
+    /* Inicia el componente FullTextAnalyzer con sus valores por defecto y los necesarios
+     * para el escaneo de texto completo de los documentos HTML almacenados.
+     */
+    
+    private $FullTextAnalyzer;
+    
+    private function initFullTextAnalyzer(){        
+        $collection = new ComponentCollection();
+        $this->FullTextAnalyzer = new FullTextAnalyzerComponent($collection);
+        
+        $this->FullTextAnalyzer->init($this->CrawlerLog,function($message){
+            CakeLog::write('info', $message, 'fts');
+        });        
     }
     
     /* Realiza el analisis de hipervinculos de cada documento HTML almacenado */
