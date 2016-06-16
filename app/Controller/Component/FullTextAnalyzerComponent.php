@@ -8,6 +8,7 @@ App::uses('ComponentCollection', 'Controller');
 App::import('Model', 'CrawlerLog');
 App::import('Model', 'MetaDataFile');
 App::import('Model', 'DataFile');
+App::import('Model', 'HtmldocFullText');
 
 /* Este componente se encarga de recolectar informacion de Full Text Search
  * de los documents HTML almacenados
@@ -17,6 +18,7 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
     private $MetaDataFile;
     private $DataFile;
     private $CrawlerLog;
+    private $HtmldocFullText;
     
     
     /* Override de la funcion generica para agregar el TAG FTS
@@ -38,6 +40,7 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
         $this->MetaDataFile = new MetaDataFile();
         $this->DataFile = new DataFile();
         $this->CrawlerLog = new CrawlerLog();
+        $this->HtmldocFullText = new HtmldocFullText();
     }   
     
     
@@ -122,11 +125,89 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
                 return false;
             }
             
-            echo "{$this->Scrapper->getTitle()} {$this->Scrapper->getH1()}\n";
-            $this->Scrapper->clear();
+            $this->scrapFullText();
+            $this->populateFullText();
+            $this->storeFullText();
         }
         
         return true;
+    }
+    
+    /**
+     * Se encarga de analizar el texto del documento HTML.
+     * 
+     * [FLUSH] DataFile
+     */
+    
+    private function scrapFullText(){
+        $this->Scrapper->scrapFullText($this->DataFile->getFile());
+        $this->DataFile->clearFields();
+    }
+    
+    /**
+     * Se encarga de almacenar adecuadamente los campos del Full Text.
+     * Si el Full Text para el MetaDataFile actual existe, se actualiza.
+     * 
+     * [FLUSH] Scrapper
+     */
+    
+    private function populateFullText(){
+        $metaDataId = $this->MetaDataFile->id;
+        $h1 = $this->Scrapper->getH1();
+        $title = $this->Scrapper->getTitle();
+        $text = $this->Scrapper->getText();
+        
+        if($this->HtmldocFullText->loadMeta($metaDataId)){
+            $this->logAnalyzer("UPDATING<META:$metaDataId>");
+        }
+        else{
+            $this->HtmldocFullText->id = null;
+            $this->HtmldocFullText->Data()->write('meta_data_file_id',$metaDataId);
+            $this->logAnalyzer("CREATING<META:$metaDataId>");
+        }
+        
+        if(strlen($text) > 20){
+            $logText = substr($text,0,20) . '...';
+        }
+        else{
+            $logText = $text;
+        }
+        
+        $this->logAnalyzer("POPULATING<META:$metaDataId,H1:$h1>");
+        $this->logAnalyzer("POPULATING<META:$metaDataId>,TITLE:$title");
+        $this->logAnalyzer("POPULATING<META:$metaDataId>,TEXT:$logText");
+        
+        $this->HtmldocFullText->Data()->write('h1',$this->Scrapper->getH1());
+        $this->HtmldocFullText->Data()->write('title',$this->Scrapper->getTitle());
+        $this->HtmldocFullText->Data()->write('doctext',$this->Scrapper->getText());
+        $this->Scrapper->clear();
+    }
+    
+    /**
+     * Se encarga de almacenar el Full Text.
+     * Tambien popula el TSV.
+     * 
+     * [FLUSH] HtmldocFullText
+     */
+    
+    private function storeFullText(){
+        $metaDataId = $this->MetaDataFile->id;
+        
+        if($this->HtmldocFullText->store()){
+            $this->logAnalyzer("STORE<META:$metaDataId,DONE>");
+            
+            if($this->HtmldocFullText->updateTsv()){
+                $this->logAnalyzer("TSV<META:$metaDataId,DONE>");
+            }
+            else{
+                $this->logAnalyzer("TSV<META:$metaDataId,FAIL>");
+            }
+        }
+        else{
+            $this->logAnalyzer("STORE<META:$metaDataId,FAIL>");
+        }
+        
+        $this->HtmldocFullText->clearFields();
     }
     
     /* Carga el archivo HTML en memoria */

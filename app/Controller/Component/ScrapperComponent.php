@@ -399,9 +399,9 @@ class ScrapperComponent extends CrawlerUtilityComponent{
      *      * Scrap del Texto
      */
     
-    private $h1;
-    private $title;
-    private $text;
+    private $h1 = null;
+    private $title = null;
+    private $text = null;
     
     public function scrapFullText($textHtml){
         libxml_use_internal_errors(true);
@@ -422,23 +422,23 @@ class ScrapperComponent extends CrawlerUtilityComponent{
     
     private function scrapH1(){
         $h1 = $this->Dom->getElementsByTagName('h1');
+        $h1node = $h1->item(0);
         
-        if(isset($h1[0]) === false){
+        if(is_null($h1node) === true){
             return;
         }
         
-        $h1node = $h1[0];
         $this->h1 = $h1node->textContent;
     }
     
     private function scrapTitle(){
         $title = $this->Dom->getElementsByTagName('title');
+        $titleNode = $title->item(0);
         
-        if(isset($title[0]) === false){
+        if(is_null($titleNode) === true){
             return;
         }
         
-        $titleNode = $title[0];
         $this->title = $titleNode->textContent;
         
     }
