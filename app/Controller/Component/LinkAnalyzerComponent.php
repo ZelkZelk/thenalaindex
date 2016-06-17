@@ -287,6 +287,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             $replace_url = $this->getReplaceUrl($url,$hash);
             
             if($replace_url === false){
+                $this->replaceAbsoluteUrl($node,$url);
                 continue;
             }
             
@@ -303,6 +304,36 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $isHtml = $this->MetaDataFile->isHtml();
                 $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
             }
+        }
+    }
+    
+    /**
+     * Si no se encuentra el meta data del link en la exploracion, reemplazamos
+     * con su URL absolute 
+     */
+    
+    private function replaceAbsoluteUrl($node,$url){
+        $referer = $this->Referer->Data()->read('full_url');
+        $this->Normalizer->normalize($url,$referer);
+        $replace_url = $this->Normalizer->getNormalizedUrl();
+        $this->logAnalyzer("REPLACING-ABSOLUTE<$url,$replace_url>");
+        
+        switch($node->tagName){
+            case 'a':
+                $this->replaceATag($node,$replace_url);
+                break;
+            case 'link':
+                $this->replaceLinkTag($node,$replace_url);
+                break;
+            case 'style':
+                $this->replaceStyleInclude($node,$replace_url,$url,'NOHASH');
+                break;
+            case 'script':
+                $this->replaceScriptTag($node,$replace_url);
+                break;
+            case 'img':
+                $this->replaceImgTag($node,$replace_url);
+                break;
         }
     }
     
