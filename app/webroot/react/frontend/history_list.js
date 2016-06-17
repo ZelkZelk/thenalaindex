@@ -33,7 +33,14 @@ var UI = {
         return renderUI;
     },
     empty  : function(react){
-        var emptyUI = ( <div className="row">No hay Historiales para mostrar</div> );
+        var emptyUI = (
+            <div className="row">
+                <p>
+                    No hay Historiales aun. Vuelve en otra ocasion.
+                </p>
+            </div>
+        );
+
         var renderUI = UI.get(react,emptyUI,true);
         return renderUI;
     },

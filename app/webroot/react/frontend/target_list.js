@@ -7,7 +7,14 @@ var States = {
 
 var UI = {
     empty : (
-        <div>No hay Historiales Disponibles</div>
+        <div id="error" className="module_wrapper">
+            <h1 className="module_title">No hay Sitios Explorados aun</h1>
+            <div className="row">
+                <p>
+                    Vuelve en otra ocasion.
+                </p>
+            </div>
+        </div>
     ),
     done : function(data,props){
         var properties = props;
