@@ -66,7 +66,15 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
      */
     
     private function flagCrawlerLog(){
-        $this->CrawlerLog->Data()->write('full_text_analyzed',date('Y-m-d H:i:s'));
+        $now = date('Y-m-d H:i:s');
+        $this->CrawlerLog->Data()->write('full_text_analyzed',$now);
+        
+        if($this->CrawlerLog->store()){
+            $this->logAnalyzer("FLAG-CRAWLER<$now,DONE>");
+        }
+        else{
+            $this->logAnalyzer("FLAG-CRAWLER<$now,FAIL>");
+        }
     }
     
     /* Carga los modelos e inicializa los componentes requeridos para el analisis */
