@@ -126,7 +126,7 @@ class Url extends AppModel {
      * devuelve FALSE.
      */
     
-    public function getTraillingSlashUrl($url){
+    private function getTraillingSlashUrl($url){
         $regex = '/(\?.*)/';
         $querystring = [];
         $qs = '';
