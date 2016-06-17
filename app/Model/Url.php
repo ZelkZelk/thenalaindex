@@ -146,4 +146,36 @@ class Url extends AppModel {
         
         return $qurl . '/' . $qs;
     }
+    
+    /**
+     * Determina si la URL tiene un slash trailling
+     */
+    
+    public function isTraillingSlash($url){
+        $regex = '/(\?.*)/';
+        $qurl = preg_replace($regex,'',$url);
+        $last = substr($qurl,-1);
+        return $last === '/';
+    }
+    
+    /**
+     * Obtiene la URL slashless
+     */
+    
+    public function getSlashlessUrl($url){
+        $regex = '/(\?.*)/';
+        $querystring = [];
+        $qs = '';
+        
+        if(preg_match($regex, $url, $querystring)){
+            if(isset($querystring[0])){
+                $qs = $querystring[0];
+            }
+        }
+        
+        $slashRegex = '/\/+$/';
+        $qurl = preg_replace($regex,'',$url);
+        $slashless = preg_replace($slashRegex,'',$qurl);
+        return $slashless . $qs;
+    }
 }

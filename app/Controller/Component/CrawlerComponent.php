@@ -489,16 +489,11 @@ class CrawlerComponent extends Component{
             $this->Queue->done($this->Referer);        
         }
         
-        $regex = '/(\?.*)/';
-        $qurl = preg_replace($regex,'',$url);
-        $last = substr($qurl,-1);
-        
-        if($last == '/'){
-            $count = strlen($qurl);
-            $slashless = substr($qurl,0,$count - 1);
-            $this->logcat("TRAILLING SLASH URL:<{$qurl},{$slashless}");
+        if($this->Url->isTraillingSlash($url)){
+            $slashless = $this->Url->getSlashlessUrl($url);
+            $this->logcat("TRAILLING SLASH URL:<{$url},{$slashless}");
             $this->Queue->push($slashless);      
-            $this->Queue->done($slashless);        
+            $this->Queue->done($slashless); 
         }
         
         $this->Queue->done($url);        
