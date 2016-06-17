@@ -174,12 +174,54 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         } while($count === $limit);
     }
     
+    /**
+     * Optimizamos el analisis de link, analizando solo aquellos data files
+     * que aun no hemos analizado, desde las optimizaciones de ahorro de espacio
+     * se reciclan los documentos que son iguales entre meta datas.
+     */
+    
+    private $analyzed = [];
+    
+    private function analysisNeeded(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $analyzedKey = $this->getAnalyzedKey($dataFileId);
+        
+        if(isset($this->analyzed[$analyzedKey]) === true){
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /*
+     * Obtiene el key que popula el array $analyzed
+     */
+    
+    private function getAnalyzedKey($dataFileId){
+        return "df$dataFileId";
+    }
+    
+    /**
+     * Popula el array $analyzed con el data file actual
+     */
+    
+    private function setAnalyzed(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $analyzedKey = $this->getAnalyzedKey($dataFileId);
+        $this->analyzed[$analyzedKey] = true;
+    }
+    
     /* Scrapea todas las URLs del documento HTML, */
     
     private function urlScan(){
         $id = $this->MetaDataFile->id;
         
         if($this->MetaDataFile->isHtml()){
+            if($this->analysisNeeded() === false){
+                $this->logAnalyzer("DATAFILE<$id,ALREADY ANALYZED>");
+                return false;
+            }
+            
             if($this->loadDataFile() === false){
                 $this->logAnalyzer("DATAFILE<$id,NOT FOUND>");
                 return false;
@@ -200,6 +242,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $this->HtmldocLink->updateHashes($hashes);
             }
             
+            $this->setAnalyzed();
             $this->Scrapper->clear();
             $this->flushHashes();
         }
