@@ -1,20 +1,22 @@
 <?php
 
 App::uses('Model', 'MetaDataFile');
+App::uses('Model', 'DataFile');
+
 
 class HtmldocFullText extends AppModel {    
     public $useDbConfig = 'analysis';
     private $schema = 'default';    
     
     private $defaultSchema = [
-        'meta_data_file_id' => array(
+        'data_file_id' => array(
             'type' => 'foreign',
             'required' => true,
             'unique' => false,
-            'label' => 'Meta Data',
+            'label' => 'Archivo',
             'writable' => false,
             'readable' => true,
-            'class' => 'MetaDataFile'
+            'class' => 'DataFile'
         ),
         'h1' => array(
             'required' => false,
@@ -69,12 +71,12 @@ class HtmldocFullText extends AppModel {
     }
     
     /**
-     * Carga el Full Text del meta_data_file_id proporcionado
+     * Carga el Full Text del Data File Id proporcionado.
      */
     
-    public function loadMeta($metaDataId){
+    public function loadFile($dataFileId){
         $cnd = [];
-        $cnd['HtmldocFullText.meta_data_file_id'] = $metaDataId;
+        $cnd['HtmldocFullText.data_file_id'] = $dataFileId;
         
         $data = $this->find('first',[
             'conditions' => $cnd
@@ -119,7 +121,7 @@ class HtmldocFullText extends AppModel {
     
     public function searchAll($term){
         $db = $this->getDataSource();
-        $sql = "SELECT id, meta_data_file_id, title, h1, tsv
+        $sql = "SELECT id, data_file_id, title, h1, tsv
                 FROM analysis.htmldoc_full_texts, plainto_tsquery(?) AS q
                 WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery(?)) DESC LIMIT 20";
         

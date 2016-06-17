@@ -131,6 +131,42 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
     }
     
     /**
+     * Determina si es requerido analizar el DataFile actual
+     */
+    
+    private $analyzed;
+    
+    private function analysisNeeded(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $key = $this->getAnalyzedKey($dataFileId);
+        
+        if(isset($this->analyzed[$key]) === true){
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Obtiene el key que popula el array $analyzed, desde el dataFileId 
+     * proporcionado.
+     */
+    
+    private function getAnalyzedKey($dataFileId){
+        return "df$dataFileId";
+    }
+    
+    /**
+     * Establece el DataFile actual como analizado.
+     */
+    
+    private function setAnalyzed(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $key = $this->getAnalyzedKey($dataFileId);
+        $this->analyzed[$key] = true;
+    }
+    
+    /**
      * Realiza el scaneo de texto completo del documento HTML
      */
     
@@ -138,6 +174,11 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
         $id = $this->MetaDataFile->id;
         
         if($this->MetaDataFile->isHtml()){
+            if($this->analysisNeeded() === false){
+                $this->logAnalyzer("DATAFILE<$id,ALREADY ANALYZED>");
+                return false;
+            }
+            
             if($this->loadDataFile() === false){
                 $this->logAnalyzer("DATAFILE<$id,NOT FOUND>");
                 return false;
@@ -146,6 +187,7 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
             $this->scrapFullText();
             $this->populateFullText();
             $this->storeFullText();
+            $this->setAnalyzed();
         }
         
         return true;
@@ -170,17 +212,18 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
      */
     
     private function populateFullText(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
         $metaDataId = $this->MetaDataFile->id;
         $h1 = $this->Scrapper->getH1();
         $title = $this->Scrapper->getTitle();
         $text = $this->Scrapper->getText();
         
-        if($this->HtmldocFullText->loadMeta($metaDataId)){
+        if($this->HtmldocFullText->loadFile($dataFileId)){
             $this->logAnalyzer("UPDATING<META:$metaDataId>");
         }
         else{
             $this->HtmldocFullText->id = null;
-            $this->HtmldocFullText->Data()->write('meta_data_file_id',$metaDataId);
+            $this->HtmldocFullText->Data()->write('data_file_id',$dataFileId);
             $this->logAnalyzer("CREATING<META:$metaDataId>");
         }
         
@@ -231,10 +274,10 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
     /* Carga el archivo HTML en memoria */
     
     private function loadDataFile(){
-        $id = $this->MetaDataFile->id;
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
         $response = true;
         
-        if($this->DataFile->loadFromMeta($id) === false){
+        if($this->DataFile->loadFromId($dataFileId) === false){
             $response = false;
         }
         
