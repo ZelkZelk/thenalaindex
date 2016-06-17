@@ -332,5 +332,40 @@ class CrawlerLog extends AppModel {
         
         return $logs;
     }
+ 
+    /**
+     * Obtiene el primer crawler pendiente de analisis FTS.
+     */
     
+    public function getFullTextPending(){
+        $log = $this->find('first',[
+            'order' => 'CrawlerLog.id asc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
+            ],
+            'conditions' => [
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL,
+                'CrawlerLog.full_text_analyzed' => NULL,
+            ],
+        ]);
+        
+        if($log){
+            $alias = $this->alias;
+            $blob = $log[$alias];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+        
+    }
 }
