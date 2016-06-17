@@ -11,7 +11,7 @@ class FullTextCrontabShell extends AppShell {
     private static $mutexKey = 'Nala::FullTextContrab::mainMutex(%d)';
     
     function main(){
-        $this->setupLog('fts_cron.log', [ 'fts_cron' ]);
+        $this->setupLog('fts-cron.log', [ 'fts_cron' ]);
         $this->mainImpl();
     }
     
