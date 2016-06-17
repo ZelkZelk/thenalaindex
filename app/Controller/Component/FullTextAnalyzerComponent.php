@@ -53,10 +53,20 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
         if($this->CrawlerLog->loadFromId($id)){
             $this->scannerSetup();
             $this->pagedScanner($id);
+            $this->flagCrawlerLog($id);
         }
         else{
             $this->logAnalyzer("CRAWLER<$id,NOT FOUND>");
         }
+    }
+    
+    /*
+     * Popula el flag del crawler log para establecer que ya se realizo el 
+     * analisis correspondiente.
+     */
+    
+    private function flagCrawlerLog(){
+        $this->CrawlerLog->Data()->write('full_text_analyzed',date('Y-m-d H:i:s'));
     }
     
     /* Carga los modelos e inicializa los componentes requeridos para el analisis */
