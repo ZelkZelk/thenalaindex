@@ -410,7 +410,7 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         if(@$this->Dom->loadHTML($textHtml)){        
             $this->scrapH1();   
             $this->scrapTitle();   
-            $this->scrapText();   
+            $this->scrapText($textHtml);   
         }
         else{
             $this->logInfo('Invalid HTML');
@@ -425,6 +425,7 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $h1node = $h1->item(0);
         
         if(is_null($h1node) === true){
+            $this->h1 = null;
             return;
         }
         
@@ -436,15 +437,16 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $titleNode = $title->item(0);
         
         if(is_null($titleNode) === true){
+            $this->title = null;
             return;
         }
         
         $this->title = $titleNode->textContent;
-        
     }
     
-    private function scrapText(){
-        
+    private function scrapText($textHtml){
+        $text = preg_replace('/\s+/',' ',trim(strip_tags($textHtml)));
+        $this->text = $text;
     }
     
     function getH1() {
