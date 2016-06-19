@@ -309,14 +309,15 @@ class MetaDataFile extends AppModel {
     
     /* Obtiene los Meta Datos de un determinado proceso de Crawling */
     
-    public function getHtmldocCrawled($crawler_log_id,$limit = 100,$offset = 0){
+    public function getHtmldocCrawled($crawler_log_id,$limit = 100,$pivot = 0){
         $cnd = [];
         $cnd['MetaDataFile.crawler_log_id'] = $crawler_log_id;
+        $cnd['MetaDataFile.id > '] = $pivot;
         
         $opts = [];
         $opts['conditions'] = $cnd;
         $opts['limit'] = $limit;
-        $opts['offset'] = $offset;
+        $opts['order'] = 'MetaDataFile.id asc';
         
         return $this->find('all',$opts);
     }

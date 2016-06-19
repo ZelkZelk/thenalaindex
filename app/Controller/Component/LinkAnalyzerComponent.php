@@ -159,16 +159,16 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         $alias = $this->MetaDataFile->alias;
         $limit = $this->limit;
         $offset = 0;
+        $pivot = 0;
         
         do{
-            $data = $this->MetaDataFile->getHtmldocCrawled($id, $limit, $offset);
-            $count = count($data);
-            $offset += $count;
-            
+            $data = $this->MetaDataFile->getHtmldocCrawled($id, $limit, $pivot);
             foreach($data as $metaData){
                 $blob = $metaData[$alias];
                 $this->MetaDataFile->loadArray($blob);
                 $this->urlScan();
+                
+                $pivot = $this->MetaDataFile->id;
             }
             
         } while($count === $limit);
@@ -347,9 +347,12 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             }
             
             if(strtolower($node->tagName) === 'a'){
-                $this->MetaDataFile->loadHash($hash);
-                $isHtml = $this->MetaDataFile->isHtml();
-                $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
+                $Meta = new MetaDataFile();
+                
+                if($Meta->loadHash($hash)){
+                    $isHtml = $Meta->isHtml();
+                    $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
+                }
             }
         }
     }
