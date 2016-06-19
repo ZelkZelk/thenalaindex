@@ -215,6 +215,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
     
     private function urlScan(){
         $id = $this->MetaDataFile->id;
+        $this->logAnalyzer("URL-SCAN<META:$id>");
         
         if($this->MetaDataFile->isHtml()){
             if($this->analysisNeeded() === false){
@@ -237,9 +238,12 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $this->logAnalyzer("HTMLDOCLINK<$id,NOT FOUND>");
                 return false;
             }
-            else{
-                $hashes = $this->getHashes();
-                $this->HtmldocLink->updateHashes($hashes);
+            
+            $hashes = $this->getHashes();
+                
+            if($this->HtmldocLink->updateHashes($hashes) === false){
+                $this->logAnalyzer("HTMLDOCLINK<UPDATE-HASHES,FAIL>");
+                return false;
             }
             
             $this->setAnalyzed();
