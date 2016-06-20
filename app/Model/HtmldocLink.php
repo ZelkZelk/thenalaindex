@@ -67,11 +67,23 @@ class HtmldocLink extends AppModel {
     }
     
     /* Crea el listado de Links del MetaDataFile explorado, el array de hashes
-     * se cargar en la fase final de analisis de htmldoclink */
+     * se cargar en la fase final de analisis de htmldoclink.
+     * 
+     * Funcion legacy, para ahorro de espacio de almacenamiento ahora este
+     * modelo se relaciona directamente con DataFile.
+     * 
+     * Si ya existe el data_file_id lo carga, en vez de crear uno nuevo.
+     **/
     
     public function createDoclink(MetaDataFile $MetaData){
+        $dataFileId = $MetaData->Data()->read('data_file_id');
+        
+        if($this->loadDataFile($dataFileId)){
+            return true;
+        }
+        
         $data = [];
-        $data['meta_data_file_id'] = $MetaData->id;
+        $data['data_file_id'] = $dataFileId;
         $data['id'] = null;
         
         $this->id = null;
@@ -79,11 +91,13 @@ class HtmldocLink extends AppModel {
         return $this->store();
     }
     
-    /* Carga el modelo basado en el MetaDataFile */
+    /**
+     * Carga el modelo por DataFileId
+     */
     
-    public function loadFromMeta(MetaDataFile $MetaData){
+    public function loadDataFile($dataFileId){
         $cnd = [];
-        $cnd['HtmldocLink.meta_data_file_id'] = $MetaData->id;
+        $cnd['HtmldocLink.data_file_id'] = $dataFileId;
         $response = false;
         
         $data = $this->find('first',[
@@ -98,6 +112,16 @@ class HtmldocLink extends AppModel {
         }
         
         return $response;
+    }
+    
+    /* Carga el modelo basado en el MetaDataFile.
+     * Funcion legacy, para ahorro de espacio de almacenamiento ahora este
+     * modelo se relaciona directamente con DataFile
+     **/
+    
+    public function loadFromMeta(MetaDataFile $MetaData){
+        $dataFileId = $MetaData->Data()->read('data_file_id');
+        return $this->loadDataFile($dataFileId);
     }
     
     /* Actualiza los hashes del registro actual */

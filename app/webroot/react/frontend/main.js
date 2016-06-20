@@ -919,8 +919,13 @@ var UI = {
         var emptyUI = React.createElement(
             'div',
             { className: 'row' },
-            'No hay Historiales para mostrar'
+            React.createElement(
+                'p',
+                null,
+                'No hay Historiales aun. Vuelve en otra ocasion.'
+            )
         );
+
         var renderUI = UI.get(react, emptyUI, true);
         return renderUI;
     },
@@ -1808,8 +1813,21 @@ var States = {
 var UI = {
     empty: React.createElement(
         "div",
-        null,
-        "No hay Historiales Disponibles"
+        { id: "error", className: "module_wrapper" },
+        React.createElement(
+            "h1",
+            { className: "module_title" },
+            "No hay Sitios Explorados aun"
+        ),
+        React.createElement(
+            "div",
+            { className: "row" },
+            React.createElement(
+                "p",
+                null,
+                "Vuelve en otra ocasion."
+            )
+        )
     ),
     done: function (data, props) {
         var properties = props;

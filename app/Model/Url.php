@@ -112,12 +112,70 @@ class Url extends AppModel {
             return false;         
         }
         
-        $last = substr($url,-1);
+        $traillingSlashedUrl = $this->getTraillingSlashUrl($url);
+        
+        if($traillingSlashedUrl === false){
+            return false;
+        }
+        
+        return $this->getUrlId($traillingSlashedUrl,false);   
+    }
+    
+    /**
+     * Obtiene la URL con trailling slash. Si la URL ya termina en slash
+     * devuelve FALSE.
+     */
+    
+    private function getTraillingSlashUrl($url){
+        $regex = '/(\?.*)/';
+        $querystring = [];
+        $qs = '';
+        
+        if(preg_match($regex, $url, $querystring)){
+            if(isset($querystring[0])){
+                $qs = $querystring[0];
+            }
+        }
+        
+        $qurl = preg_replace($regex,'',$url);
+        $last = substr($qurl,-1);
         
         if($last === '/'){
             return false;
         }
         
-        return $this->getUrlId($url . '/',false);   
+        return $qurl . '/' . $qs;
+    }
+    
+    /**
+     * Determina si la URL tiene un slash trailling
+     */
+    
+    public function isTraillingSlash($url){
+        $regex = '/(\?.*)/';
+        $qurl = preg_replace($regex,'',$url);
+        $last = substr($qurl,-1);
+        return $last === '/';
+    }
+    
+    /**
+     * Obtiene la URL slashless
+     */
+    
+    public function getSlashlessUrl($url){
+        $regex = '/(\?.*)/';
+        $querystring = [];
+        $qs = '';
+        
+        if(preg_match($regex, $url, $querystring)){
+            if(isset($querystring[0])){
+                $qs = $querystring[0];
+            }
+        }
+        
+        $slashRegex = '/\/+$/';
+        $qurl = preg_replace($regex,'',$url);
+        $slashless = preg_replace($slashRegex,'',$qurl);
+        return $slashless . $qs;
     }
 }

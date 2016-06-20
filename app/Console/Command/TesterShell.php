@@ -172,7 +172,7 @@ class TesterShell extends AppShell {
     
     public function dumpdatafile(){
         $Reader = new DataFile();
-        $Reader->loadFromId(130894);
+        $Reader->loadFromId(10128);
         $file = $Reader->getFile();
         
         echo $file;

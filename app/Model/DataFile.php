@@ -58,23 +58,31 @@ class DataFile extends AppModel {
     
     /* Crea el registro DataFile con los siguientes campos:
      * 
-     *      * meta_data_file_id : Id del modelo MetaDataFile enviado como parametro
      *      * file: representacion binaria del documento a ser almacenado, proviene
      *          del cuerpo de la respuesta HTTP realizada
+     *      * checksum : hash unico por archivo (ahorro de espacio de almacenamiento)
+     * 
+     * Si el checksum ya se encuentra almacenado, carga el modelo con este registro.
      */
     
-    public function createData(MetaDataFile $MetaData, HttpClientComponent $Http){
+    public function createData(HttpClientComponent $Http){
         $response = false;
         
         $data = [];
-        $data['meta_data_file_id'] = $MetaData->id;
         $data['file'] = $Http->getResponse();
         $data['id'] = null;
         
         $this->id = null;
         $this->loadArray($data);
         
-        if($this->store()){
+        $checksum = $this->getChecksum($Http->getSize());
+        $this->Data()->write('checksum',$checksum);
+        
+        if($this->loadChecksum($checksum)){
+            $this->Data()->write('id',$this->id);
+            $response = true;
+        }
+        else if($this->store()){
             $this->Data()->write('id',$this->id);
             $response = true;
         }
@@ -96,11 +104,15 @@ class DataFile extends AppModel {
         return $response;
     }
     
-    /* Obtiene el checksum del documento almacenado */
+    /* Obtiene el checksum del documento almacenado.
+     * La resolucion del checksum es: md5 del archivo concatenando con la entropia
+     * para evitar colisiones, la implementacion de este modelo incluyo el size
+     * del archivo como entropia.
+     *  */
     
-    public function getChecksum(){
+    public function getChecksum($entropy){
         $bin = $this->Data()->read('file');
-        $hash = md5($bin);
+        $hash = md5($bin) . $entropy;
         
         return $hash;        
     }
@@ -114,11 +126,28 @@ class DataFile extends AppModel {
         return $file;
     }
     
-    /* Recupera el archivo de un metadata */
+    /* 
+     * Recupera el archivo de un metadata.
+     * Esta funcion se deja por motivos de legacy, pero se acopla a la nueva
+     * especificacion de BD para ahorro de almacenamiento.
+     **/
     
     public function loadFromMeta($meta_data_id){
+        $MetaDataFile = new MetaDataFile();
+        
+        if($MetaDataFile->loadFromId($meta_data_id) === false){
+            return false;
+        }
+        
+        $data_file_id = $MetaDataFile->Data()->read('data_file_id');
+        return $this->loadFromId($data_file_id);
+    }
+    
+    /* Recupera un archivo por su checksum */
+    
+    public function loadChecksum($checksum){
         $cnd = [];
-        $cnd['DataFile.meta_data_file_id'] = $meta_data_id;
+        $cnd['DataFile.checksum'] = $checksum;
         
         $data = $this->find('first', [
             'conditions' => $cnd
@@ -128,8 +157,25 @@ class DataFile extends AppModel {
             $alias = $this->alias;
             $blob = $data[$alias];
             $this->loadArray($blob);
+            return true;
         }
         
-        return $data;
+        return false;
+    }
+    
+    /* Almacena el checksum del campo data recien almacenado en el modelo DataFile,
+     * este modelo se pasa por parametro. El checksum se consigue ejectuando
+     * la funcion DataFile::getChecksum() */
+    
+    public function bindChecksum(DataFile $dataFile){
+        $checksum = $dataFile->getChecksum();
+        $this->Data()->write('checksum',$checksum);
+        $response = false;
+        
+        if($this->store()){
+            $response = true;
+        }
+        
+        return $response;
     }
 }

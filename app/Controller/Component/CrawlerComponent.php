@@ -489,14 +489,11 @@ class CrawlerComponent extends Component{
             $this->Queue->done($this->Referer);        
         }
         
-        $last = substr($url,-1);
-        
-        if($last == '/'){
-            $count = strlen($url);
-            $slashless = substr($url,0,$count - 1);
+        if($this->Url->isTraillingSlash($url)){
+            $slashless = $this->Url->getSlashlessUrl($url);
             $this->logcat("TRAILLING SLASH URL:<{$url},{$slashless}");
             $this->Queue->push($slashless);      
-            $this->Queue->done($slashless);        
+            $this->Queue->done($slashless); 
         }
         
         $this->Queue->done($url);        
@@ -681,9 +678,9 @@ class CrawlerComponent extends Component{
         }
     }
     
-    /* Almacena en BD el cuerpo de la conexion HTTP realzida relacionandolo
-     * al Meta Data creado con anterioridad. Ademas actualiza el MetaDataFile
-     * para crear su Checksum real! 
+    /* Almacena en BD el cuerpo de la conexion HTTP, busca en la tabla si existe
+     * un archivo similar para intentar ahorrar espacio comparando el checksum
+     * generado. Ademas actualiza el MetaDataFile para relacionarlo al DataFile
      * 
      * NOTA: A partir de este punto Http se recicla
      * 
@@ -691,8 +688,8 @@ class CrawlerComponent extends Component{
      */
     
     private function createDataFile(){
-        $this->DataFile->createData($this->MetaDataFile,$this->Http);  
-        $this->MetaDataFile->bindChecksum($this->DataFile);
+        $this->DataFile->createData($this->Http);  
+        $this->MetaDataFile->bindFile($this->DataFile);  
         $this->Http->clear();   
     }
     
