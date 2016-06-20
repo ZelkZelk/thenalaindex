@@ -159,27 +159,70 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         $alias = $this->MetaDataFile->alias;
         $limit = $this->limit;
         $offset = 0;
+        $pivot = 0;
         
         do{
-            $data = $this->MetaDataFile->getHtmldocCrawled($id, $limit, $offset);
-            $count = count($data);
-            $offset += $count;
-            
+            $data = $this->MetaDataFile->getHtmldocCrawled($id, $limit, $pivot);
             foreach($data as $metaData){
                 $blob = $metaData[$alias];
                 $this->MetaDataFile->loadArray($blob);
                 $this->urlScan();
+                
+                $pivot = $this->MetaDataFile->id;
             }
             
         } while($count === $limit);
+    }
+    
+    /**
+     * Optimizamos el analisis de link, analizando solo aquellos data files
+     * que aun no hemos analizado, desde las optimizaciones de ahorro de espacio
+     * se reciclan los documentos que son iguales entre meta datas.
+     */
+    
+    private $analyzed = [];
+    
+    private function analysisNeeded(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $analyzedKey = $this->getAnalyzedKey($dataFileId);
+        
+        if(isset($this->analyzed[$analyzedKey]) === true){
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /*
+     * Obtiene el key que popula el array $analyzed
+     */
+    
+    private function getAnalyzedKey($dataFileId){
+        return "df$dataFileId";
+    }
+    
+    /**
+     * Popula el array $analyzed con el data file actual
+     */
+    
+    private function setAnalyzed(){
+        $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
+        $analyzedKey = $this->getAnalyzedKey($dataFileId);
+        $this->analyzed[$analyzedKey] = true;
     }
     
     /* Scrapea todas las URLs del documento HTML, */
     
     private function urlScan(){
         $id = $this->MetaDataFile->id;
+        $this->logAnalyzer("URL-SCAN<META:$id>");
         
         if($this->MetaDataFile->isHtml()){
+            if($this->analysisNeeded() === false){
+                $this->logAnalyzer("DATAFILE<$id,ALREADY ANALYZED>");
+                return false;
+            }
+            
             if($this->loadDataFile() === false){
                 $this->logAnalyzer("DATAFILE<$id,NOT FOUND>");
                 return false;
@@ -195,11 +238,15 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $this->logAnalyzer("HTMLDOCLINK<$id,NOT FOUND>");
                 return false;
             }
-            else{
-                $hashes = $this->getHashes();
-                $this->HtmldocLink->updateHashes($hashes);
+            
+            $hashes = $this->getHashes();
+                
+            if($this->HtmldocLink->updateHashes($hashes) === false){
+                $this->logAnalyzer("HTMLDOCLINK<UPDATE-HASHES,FAIL>");
+                return false;
             }
             
+            $this->setAnalyzed();
             $this->Scrapper->clear();
             $this->flushHashes();
         }
@@ -287,6 +334,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             $replace_url = $this->getReplaceUrl($url,$hash);
             
             if($replace_url === false){
+                $this->replaceAbsoluteUrl($node,$url);
                 continue;
             }
             
@@ -299,10 +347,43 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
             }
             
             if(strtolower($node->tagName) === 'a'){
-                $this->MetaDataFile->loadHash($hash);
-                $isHtml = $this->MetaDataFile->isHtml();
-                $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
+                $Meta = new MetaDataFile();
+                
+                if($Meta->loadHash($hash)){
+                    $isHtml = $Meta->isHtml();
+                    $node->setAttribute(self::$DATA_IS_HTML,$isHtml);
+                }
             }
+        }
+    }
+    
+    /**
+     * Si no se encuentra el meta data del link en la exploracion, reemplazamos
+     * con su URL absolute 
+     */
+    
+    private function replaceAbsoluteUrl($node,$url){
+        $referer = $this->Referer->Data()->read('full_url');
+        $this->Normalizer->normalize($url,$referer);
+        $replace_url = $this->Normalizer->getNormalizedUrl();
+        $this->logAnalyzer("REPLACING-ABSOLUTE<$url,$replace_url>");
+        
+        switch($node->tagName){
+            case 'a':
+                $this->replaceATag($node,$replace_url);
+                break;
+            case 'link':
+                $this->replaceLinkTag($node,$replace_url);
+                break;
+            case 'style':
+                $this->replaceStyleInclude($node,$replace_url,$url,'NOHASH');
+                break;
+            case 'script':
+                $this->replaceScriptTag($node,$replace_url);
+                break;
+            case 'img':
+                $this->replaceImgTag($node,$replace_url);
+                break;
         }
     }
     

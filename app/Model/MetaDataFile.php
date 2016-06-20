@@ -218,12 +218,9 @@ class MetaDataFile extends AppModel {
      * 
      */
     
-    private static $DEFAULT_CHECKSUM = '<DataFile::pending>';
-    
     public function createMetaData(CrawlerLog $Log,$headerData = []){
         $data = $headerData;
         $data['created'] = date('Y-m-d H:i:s');
-        $data['checksum'] = self::$DEFAULT_CHECKSUM;
         $data['crawler_log_id'] = $Log->id;
         $data['id'] = null;
         
@@ -232,13 +229,11 @@ class MetaDataFile extends AppModel {
         return $this->store();
     }
     
-    /* Almacena el checksum del campo data recien almacenado en el modelo DataFile,
-     * este modelo se pasa por parametro. El checksum se consigue ejectuando
-     * la funcion DataFile::getChecksum() */
+    /* Relaciona el meta data file con el archivo almacenado en  DataFile. */
     
-    public function bindChecksum(DataFile $dataFile){
-        $checksum = $dataFile->getChecksum();
-        $this->Data()->write('checksum',$checksum);
+    public function bindFile(DataFile $dataFile){
+        $dataFileId = $dataFile->id;
+        $this->Data()->write('data_file_id',$dataFileId);
         $response = false;
         
         if($this->store()){
@@ -314,14 +309,15 @@ class MetaDataFile extends AppModel {
     
     /* Obtiene los Meta Datos de un determinado proceso de Crawling */
     
-    public function getHtmldocCrawled($crawler_log_id,$limit = 100,$offset = 0){
+    public function getHtmldocCrawled($crawler_log_id,$limit = 100,$pivot = 0){
         $cnd = [];
         $cnd['MetaDataFile.crawler_log_id'] = $crawler_log_id;
+        $cnd['MetaDataFile.id > '] = $pivot;
         
         $opts = [];
         $opts['conditions'] = $cnd;
         $opts['limit'] = $limit;
-        $opts['offset'] = $offset;
+        $opts['order'] = 'MetaDataFile.id asc';
         
         return $this->find('all',$opts);
     }

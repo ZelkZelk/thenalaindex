@@ -276,8 +276,24 @@ class UrlNormalizerComponent extends CrawlerUtilityComponent{
     /* Determina la Base URL (es decir elimina lo que esta despues del ultimo slash) */
     
     private function getBaseUrl($url){
-        $index = strrpos($url, '/');
-        $base = substr($url,0,$index + 1);
+        $queryStringIndex = strpos($url,'?');
+        
+        if($queryStringIndex !== false){
+            $queryStringLess = substr($url,0,$queryStringIndex);    
+        }
+        else{
+            $queryStringLess = $url;
+        }
+        
+        $traillingSlashIndex = strrpos($queryStringLess, '/');
+        
+        if($traillingSlashIndex !== false){
+            $base = substr($queryStringLess,0,$traillingSlashIndex + 1);
+        }
+        else{
+            $base = $queryStringIndex;
+        }
+        
         return $base;
     }
 } 
