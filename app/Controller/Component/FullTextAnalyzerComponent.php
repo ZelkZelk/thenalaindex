@@ -205,6 +205,16 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
     }
     
     /**
+     * Translitera una cadena a Latin UTF-8
+     */
+    
+    public function transliterate($text){
+        $transliteration = transliterator_transliterate('Any-Latin; Latin-ASCII',$text);
+        $ascii = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $transliteration);
+        return $ascii;
+    }
+    
+    /**
      * Se encarga de almacenar adecuadamente los campos del Full Text.
      * Si el Full Text para el MetaDataFile actual existe, se actualiza.
      * 
@@ -214,9 +224,9 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
     private function populateFullText(){
         $dataFileId = $this->MetaDataFile->Data()->read('data_file_id');
         $metaDataId = $this->MetaDataFile->id;
-        $h1 = $this->Scrapper->getH1();
-        $title = $this->Scrapper->getTitle();
-        $text = $this->Scrapper->getText();
+        $h1 = $this->transliterate($this->Scrapper->getH1());
+        $title = $this->transliterate($this->Scrapper->getTitle());
+        $text = $this->transliterate($this->Scrapper->getText());
         
         if($this->HtmldocFullText->loadFile($dataFileId)){
             $this->logAnalyzer("UPDATING<META:$metaDataId>");
@@ -238,9 +248,9 @@ class FullTextAnalyzerComponent extends CrawlerUtilityComponent{
         $this->logAnalyzer("POPULATING<META:$metaDataId>,TITLE:$title");
         $this->logAnalyzer("POPULATING<META:$metaDataId>,TEXT:$logText");
         
-        $this->HtmldocFullText->Data()->write('h1',$this->Scrapper->getH1());
-        $this->HtmldocFullText->Data()->write('title',$this->Scrapper->getTitle());
-        $this->HtmldocFullText->Data()->write('doctext',$this->Scrapper->getText());
+        $this->HtmldocFullText->Data()->write('h1',$h1);
+        $this->HtmldocFullText->Data()->write('title',$title);
+        $this->HtmldocFullText->Data()->write('doctext',$text);
         $this->Scrapper->clear();
     }
     
