@@ -162,7 +162,11 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
         $pivot = 0;
         
         do{
+            $this->logAnalyzer("LOOP-HEAP<PIVOT:$pivot,LIMIT:$limit>");
             $data = $this->MetaDataFile->getHtmldocCrawled($id, $limit, $pivot);
+            $c = count($data);
+            $this->logAnalyzer("LOOP-SEARCH<COUNT:$c>");
+            
             foreach($data as $metaData){
                 $blob = $metaData[$alias];
                 $this->MetaDataFile->loadArray($blob);
@@ -171,7 +175,7 @@ class LinkAnalyzerComponent extends CrawlerUtilityComponent{
                 $pivot = $this->MetaDataFile->id;
             }
             
-        } while($count === $limit);
+        } while($c > 0);
     }
     
     /**
