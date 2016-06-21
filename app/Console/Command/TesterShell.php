@@ -13,6 +13,7 @@ App::uses('RobotsTxtComponent', 'Controller/Component');
 App::uses('ScrapperComponent', 'Controller/Component');
 App::uses('UrlNormalizerComponent', 'Controller/Component');
 App::uses('LinkAnalyzerComponent', 'Controller/Component');
+App::uses('FullTextAnalyzerComponent', 'Controller/Component');
 
 /* 
  * 
@@ -331,5 +332,18 @@ class TesterShell extends AppShell {
         
         $file = file_get_contents('/tmp/nalatest.html');
         $this->LinkAnalyzerComponent->test($file);
+    }
+    
+    public function transliterate(){
+        $collection = new ComponentCollection();
+        $this->FullTextAnalyzer = new FullTextAnalyzerComponent($collection);
+        $this->CrawlerLog = new CrawlerLog();
+        
+        $this->FullTextAnalyzer->init($this->CrawlerLog,function($message){
+            CakeLog::write('info', $message, 'fts');
+        });        
+        
+        echo $this->FullTextAnalyzer->transliterate('Facultad Politécnica') . "\n";
+        echo $this->FullTextAnalyzer->transliterate('Muh cañerías') . "\n";
     }
 }

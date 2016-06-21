@@ -352,6 +352,9 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         $this->scripts = [];
         $this->scriptNodes = [];
         $this->Dom = null;
+        $this->h1 = null;
+        $this->title = null;
+        $this->text = null;
     }
     
     /* Obtiene todos los links que no son de hipervinculos <A> */
@@ -385,5 +388,76 @@ class ScrapperComponent extends CrawlerUtilityComponent{
     
     public function getHtml(){
         return $this->Dom->saveHTML();
+    }
+    
+    /**
+     * Realiza el scrapping de texto completo.
+     * 
+     *      * Carga el HTML en memoria
+     *      * Scrap del H1
+     *      * Scrap del Titulo
+     *      * Scrap del Texto
+     */
+    
+    private $h1 = null;
+    private $title = null;
+    private $text = null;
+    
+    public function scrapFullText($textHtml){
+        libxml_use_internal_errors(true);
+        $this->Dom = new DOMDocument();
+        
+        if(@$this->Dom->loadHTML($textHtml)){        
+            $this->scrapH1();   
+            $this->scrapTitle();   
+            $this->scrapText($textHtml);   
+        }
+        else{
+            $this->logInfo('Invalid HTML');
+        }
+        
+        libxml_use_internal_errors(false);
+        libxml_use_internal_errors(true);
+    }
+    
+    private function scrapH1(){
+        $h1 = $this->Dom->getElementsByTagName('h1');
+        $h1node = $h1->item(0);
+        
+        if(is_null($h1node) === true){
+            $this->h1 = null;
+            return;
+        }
+        
+        $this->h1 = $h1node->textContent;
+    }
+    
+    private function scrapTitle(){
+        $title = $this->Dom->getElementsByTagName('title');
+        $titleNode = $title->item(0);
+        
+        if(is_null($titleNode) === true){
+            $this->title = null;
+            return;
+        }
+        
+        $this->title = $titleNode->textContent;
+    }
+    
+    private function scrapText($textHtml){
+        $text = preg_replace('/\s+/',' ',trim(strip_tags($textHtml)));
+        $this->text = $text;
+    }
+    
+    function getH1() {
+        return $this->h1;
+    }
+
+    function getTitle() {
+        return $this->title;
+    }
+
+    function getText() {
+        return $this->text;
     }
 }
