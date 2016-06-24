@@ -410,7 +410,7 @@ class ScrapperComponent extends CrawlerUtilityComponent{
         if(@$this->Dom->loadHTML($textHtml)){        
             $this->scrapH1();   
             $this->scrapTitle();   
-            $this->scrapText($textHtml);   
+            $this->scrapText();   
         }
         else{
             $this->logInfo('Invalid HTML');
@@ -429,7 +429,7 @@ class ScrapperComponent extends CrawlerUtilityComponent{
             return;
         }
         
-        $this->h1 = $h1node->textContent;
+        $this->h1 = trim($h1node->textContent);
     }
     
     private function scrapTitle(){
@@ -441,12 +441,30 @@ class ScrapperComponent extends CrawlerUtilityComponent{
             return;
         }
         
-        $this->title = $titleNode->textContent;
+        $this->title = trim($titleNode->textContent);
     }
     
-    private function scrapText($textHtml){
+    private function scrapText(){
+        $this->removeGarbage();
+        
+        $textHtml = $this->Dom->saveHTML();
         $text = preg_replace('/\s+/',' ',trim(strip_tags($textHtml)));
         $this->text = $text;
+    }
+    
+    private function removeGarbage(){
+        $styles = $this->Dom->getElementsByTagName('style');
+        $scripts = $this->Dom->getElementsByTagName('script');
+        
+        for ($i = $styles->length; --$i >= 0; ) {
+            $style = $styles->item($i);
+            $style->parentNode->removeChild($style);
+        }
+        
+        for ($i = $scripts->length; --$i >= 0; ) {
+            $script = $scripts->item($i);
+            $script->parentNode->removeChild($script);
+        }
     }
     
     function getH1() {
