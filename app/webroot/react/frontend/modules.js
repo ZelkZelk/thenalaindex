@@ -62,6 +62,25 @@ var Modules = {
         },
         name : 'exploration'
     },
+    search : {
+        render : function(data,swapper){
+            var Search = require('./search.js');
+            var results = data.results;
+            var term = data.term;
+
+            return (
+                 <Search
+                    term={term}
+                    results={results}/>
+            );
+        },
+        params : function(q){
+            return {
+                term :q,
+            };
+        },
+        name : 'search'
+    },
 };
 
 module.exports = Modules;

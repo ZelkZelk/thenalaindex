@@ -156,7 +156,7 @@ var Dispatcher = {
         sweeper(module, params);
     },
     getSlug: function (string) {
-        var slug = string.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+        var slug = string.toLowerCase().replace(/ /g, '-').replace(/[^áéíóúÁÉÍÓÚÑñ\w-]+/g, '');
 
         return slug;
     },
@@ -282,7 +282,7 @@ var Dispatcher = {
 
 module.exports = Dispatcher;
 
-},{"../node_modules/html5-history-api/history.js":19,"./modules.js":16}],5:[function(require,module,exports){
+},{"../node_modules/html5-history-api/history.js":23,"./modules.js":17}],5:[function(require,module,exports){
 require('../node_modules/html5-history-api/history.js');
 
 var HttpClient = require('../components/http_client.js');
@@ -526,7 +526,7 @@ var Engine = React.createClass({
 
 module.exports = Engine;
 
-},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":19,"./dispatcher.js":4}],6:[function(require,module,exports){
+},{"../components/http_client.js":1,"../node_modules/html5-history-api/history.js":23,"./dispatcher.js":4}],6:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var HTMLViewer = require('./html_viewer.js');
 var HtmlUrlViewer = require('./html_url_viewer.js');
@@ -655,11 +655,12 @@ var Exploration = React.createClass({
 
 module.exports = Exploration;
 
-},{"../components/http_client.js":1,"./dispatcher.js":4,"./html_stats.js":12,"./html_url_viewer.js":13,"./html_viewer.js":14,"./modules.js":16}],7:[function(require,module,exports){
+},{"../components/http_client.js":1,"./dispatcher.js":4,"./html_stats.js":12,"./html_url_viewer.js":13,"./html_viewer.js":14,"./modules.js":17}],7:[function(require,module,exports){
 var Runner = require('../components/runner.js');
 var Dispatcher = require('./dispatcher.js');
 var Engine = require('./engine.js');
 var Header = require('./header.js');
+var Menu = require('./menu.js');
 
 var UI = {
     header: function (engine) {
@@ -686,10 +687,16 @@ var UI = {
             'div',
             { className: 'wrapper' },
             React.createElement('div', { id: 'upper' }),
+            React.createElement('div', { id: 'menu' }),
             React.createElement('div', { id: 'middle' })
         );
 
         return renderUI;
+    },
+    menu: function (engine) {
+        var swapper = engine.swapModule;
+        var menu = React.createElement(Menu, { swapper: swapper });
+        return menu;
     }
 };
 
@@ -701,9 +708,11 @@ Runner.start(function () {
     var engine = ReactDOM.render(UI.engine(), document.getElementById('middle'));
 
     var header = ReactDOM.render(UI.header(engine), document.getElementById('upper'));
+
+    var menu = ReactDOM.render(UI.menu(engine), document.getElementById('menu'));
 });
 
-},{"../components/runner.js":3,"./dispatcher.js":4,"./engine.js":5,"./header.js":8}],8:[function(require,module,exports){
+},{"../components/runner.js":3,"./dispatcher.js":4,"./engine.js":5,"./header.js":8,"./menu.js":16}],8:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var Links = require('../components/links.js');
 
@@ -1067,7 +1076,7 @@ var HistoryList = React.createClass({
 
 module.exports = HistoryList;
 
-},{"./dispatcher.js":4,"./history_item.js":9,"./history_loader.js":11,"./modules.js":16}],11:[function(require,module,exports){
+},{"./dispatcher.js":4,"./history_item.js":9,"./history_loader.js":11,"./modules.js":17}],11:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 
 var UI = {
@@ -1628,6 +1637,52 @@ var HTMLViewerLoader = React.createClass({
 module.exports = HTMLViewerLoader;
 
 },{"./dispatcher.js":4}],16:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var Searcher = require('./searcher.js');
+
+var UI = {
+    get: function (react) {
+        var swapper = react.swapper;
+
+        var renderUI = React.createElement(
+            'ul',
+            { className: 'menu' },
+            React.createElement(
+                'li',
+                null,
+                React.createElement(Searcher, { swapper: swapper })
+            )
+        );
+
+        return renderUI;
+    }
+};
+
+var Menu = React.createClass({
+    displayName: 'Menu',
+
+    propTypes: {
+        swapper: React.PropTypes.func.isRequired
+    },
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
+    },
+    swapper: function (module, params) {
+        Dispatcher.navigate(module, params, this.props.swapper);
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = UI.get(this);
+        return renderUI;
+    }
+});
+
+module.exports = Menu;
+
+},{"./dispatcher.js":4,"./searcher.js":20}],17:[function(require,module,exports){
 var Modules = {
     index: {
         render: function (data, swapper) {
@@ -1683,12 +1738,463 @@ var Modules = {
             };
         },
         name: 'exploration'
+    },
+    search: {
+        render: function (data, swapper) {
+            var Search = require('./search.js');
+            var results = data.results;
+            var term = data.term;
+
+            return React.createElement(Search, {
+                term: term,
+                results: results });
+        },
+        params: function (q) {
+            return {
+                term: q
+            };
+        },
+        name: 'search'
     }
 };
 
 module.exports = Modules;
 
-},{"./exploration.js":6,"./history_list.js":10,"./target_list.js":18}],17:[function(require,module,exports){
+},{"./exploration.js":6,"./history_list.js":10,"./search.js":18,"./target_list.js":22}],18:[function(require,module,exports){
+var SearchItem = require('./search_item.js');
+
+var States = {
+    empty: 1,
+    done: 4
+};
+
+var UI = {
+    resolvTitle: function (title, props) {
+        var title = React.createElement(
+            "h1",
+            { className: "module_title" },
+            "No se ha encontrado contenido",
+            React.createElement("br", null),
+            React.createElement(
+                "span",
+                { className: "subtitle" },
+                "Buscando '",
+                props.term,
+                "'"
+            )
+        );
+
+        return title;
+    },
+    empty: function (props) {
+        var title = UI.resolvTitle('No se ha encontrado contenido', props);
+
+        var renderUI = React.createElement(
+            "div",
+            { id: "error", className: "module_wrapper" },
+            title,
+            React.createElement(
+                "div",
+                { className: "row" },
+                React.createElement(
+                    "p",
+                    null,
+                    "Intenta con otros términos de búsqueda."
+                )
+            )
+        );
+
+        return renderUI;
+    },
+    done: function (data, props) {
+        var properties = props;
+        var list = data;
+
+        var rows = list.map(function (item, i) {
+            return React.createElement(SearchItem, {
+                swapper: properties.swapper });
+        });
+
+        var title = UI.resolvTitle('Resultados de la Búsqueda', properties);
+
+        var renderUI = React.createElement(
+            "div",
+            { id: "search_results", className: "module_wrapper" },
+            title,
+            React.createElement(
+                "ul",
+                { className: "module_list" },
+                rows
+            )
+        );
+
+        return renderUI;
+    }
+};
+
+var Search = React.createClass({
+    displayName: "Search",
+
+    propTypes: {
+        results: React.PropTypes.array.isRequired,
+        term: React.PropTypes.string.isRequired,
+        swapper: React.PropTypes.func.isRequired
+    },
+    getInitialState: function () {
+        var list = [];
+
+        if (typeof this.props.list !== 'undefined') {
+            list = this.props.list;
+        }
+
+        return this.resolvState(list);
+    },
+    resolvState: function (list) {
+        var state;
+
+        if (list.length > 0) {
+            state = States.done;
+        } else {
+            state = States.empty;
+        }
+
+        return {
+            state: state,
+            list: list
+        };
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    resolvRenderUI: function () {
+        var renderUI = "<div>View not set... yet!</div>";
+
+        switch (this.state.state) {
+            case States.empty:
+                renderUI = this.resolvEmptyUI();
+                break;
+            case States.done:
+                renderUI = this.resolvDoneUI();
+                break;
+        }
+
+        return renderUI;
+    },
+    resolvEmptyUI: function () {
+        var renderUI = UI.empty(this.props);
+        return renderUI;
+    },
+    resolvDoneUI: function () {
+        var renderUI = UI.done(this.state.list, this.props);
+        return renderUI;
+    }
+});
+
+module.exports = Search;
+
+},{"./search_item.js":19}],19:[function(require,module,exports){
+var Dispatcher = require('./dispatcher.js');
+var Modules = require('./modules.js');
+
+var SearchItem = React.createClass({
+    displayName: 'SearchItem',
+
+    module: 'histories',
+    componentWillMount: function () {
+        Dispatcher.configure($ReactData.config);
+    },
+    propTypes: {
+        id: React.PropTypes.number.isRequired,
+        url: React.PropTypes.string.isRequired,
+        name: React.PropTypes.string.isRequired,
+        first_crawl: React.PropTypes.string.isRequired,
+        last_crawl: React.PropTypes.string.isRequired,
+        histories: React.PropTypes.number.isRequired,
+        swapper: React.PropTypes.func.isRequired
+    },
+    readableDate: function (rawDate) {
+        var components = rawDate.split(/-/);
+        var year = components[0];
+        var month = components[1];
+        var day = components[2];
+
+        return day + "/" + month + "/" + year;
+    },
+    getParams: function () {
+        var id = this.props.id;
+        var target = this.props.name;
+        var page = 1;
+
+        return Modules.histories.params(id, target, page);
+    },
+    resolvUrl: function () {
+        var url = Dispatcher.resolvModuleUrl(this.module, this.getParams());
+        return url;
+    },
+    dispatch: function (event) {
+        event.preventDefault();
+        Dispatcher.navigate(this.module, this.getParams(), this.props.swapper);
+        return false;
+    },
+    render: function () {
+        var historial;
+
+        if (this.props.histories > 1) {
+            historial = 'historiales';
+        } else {
+            historial = 'historial';
+        }
+
+        return React.createElement(
+            'li',
+            { onClick: this.dispatch },
+            React.createElement(
+                'a',
+                { href: this.resolvUrl() },
+                React.createElement(
+                    'h2',
+                    null,
+                    this.props.name
+                ),
+                React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                        'b',
+                        null,
+                        'URL:'
+                    ),
+                    ' ',
+                    this.props.url,
+                    ' ',
+                    React.createElement(
+                        'i',
+                        null,
+                        '(',
+                        this.props.histories,
+                        ' ',
+                        historial,
+                        ')'
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                        'b',
+                        null,
+                        'Primera Exploracion:'
+                    ),
+                    ' ',
+                    this.readableDate(this.props.first_crawl)
+                ),
+                React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                        'b',
+                        null,
+                        'Ultima vez Explorado:'
+                    ),
+                    ' ',
+                    this.readableDate(this.props.last_crawl)
+                )
+            )
+        );
+    }
+});
+
+module.exports = SearchItem;
+
+},{"./dispatcher.js":4,"./modules.js":17}],20:[function(require,module,exports){
+var States = {
+    ready: 0,
+    empty: 1,
+    invalid: 2
+};
+
+var Classes = {
+    empty: 'has-error',
+    invalid: 'has-error',
+    ready: ''
+};
+
+var Placeholders = {
+    empty: 'No puede ir vacío!',
+    ready: 'Ingrese término de búsqueda...',
+    invalid: 'Solo letras y números!'
+};
+
+var UI = {
+    getInput: function (react, state) {
+        var swapper = react.props.swapper;
+        var placeholder = Placeholders[state];
+        var className = Classes[state];
+
+        var renderUI = React.createElement('input', { className: className, type: 'text', id: 'searcher', placeholder: placeholder, ref: function (ref) {
+                if (ref === null) {
+                    return;
+                }
+
+                react.input = ref;
+                react.input.onkeypress = react.keyPresser;
+            } });
+
+        return renderUI;
+    },
+    ready: function (react) {
+        var renderUI = UI.getInput(react, 'ready');
+        return renderUI;
+    },
+    empty: function (react) {
+        var renderUI = UI.getInput(react, 'empty');
+        return renderUI;
+    },
+    invalid: function (react) {
+        var renderUI = UI.getInput(react, 'invalid');
+        return renderUI;
+    }
+};
+
+var Search = React.createClass({
+    displayName: 'Search',
+
+    input: null,
+    module: 'search',
+    propTypes: {
+        swapper: React.PropTypes.func.isRequired
+    },
+    getModule: function () {
+        return this.module;
+    },
+    getParams: function () {
+        return {
+            term: this.trim(this.input.value)
+        };
+    },
+    trim: function (str) {
+        if (!String.prototype.trim) {
+            (function () {
+                var rtrim = /^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g;
+                String.prototype.trim = function () {
+                    return this.replace(rtrim, '');
+                };
+            })();
+        }
+
+        return str.trim();
+    },
+    render: function () {
+        var renderUI = this.resolvRenderUI();
+        return renderUI;
+    },
+    getInitialState: function () {
+        return {
+            state: States.ready
+        };
+    },
+    resolvRenderUI: function () {
+        var renderUI = React.createElement(
+            'div',
+            null,
+            ' View not set yet! '
+        );
+
+        switch (this.state.state) {
+            case States.ready:
+                renderUI = UI.ready(this);
+                break;
+            case States.empty:
+                renderUI = UI.empty(this);
+                break;
+            case States.invalid:
+                renderUI = UI.invalid(this);
+                break;
+        }
+
+        return renderUI;
+    },
+    keyPresser: function (event) {
+        if (event.keyCode === 13) {
+            this.submit();
+            return false;
+        } else {
+            this.ready();
+        }
+    },
+    empty: function () {
+        this.input.value = '';
+
+        if (this.state.state === States.empty) {
+            return;
+        }
+
+        this.setState({
+            state: States.empty
+        });
+    },
+    invalid: function () {
+        this.input.value = '';
+
+        if (this.state.state === States.invalid) {
+            return;
+        }
+
+        this.setState({
+            state: States.invalid
+        });
+    },
+    ready: function () {
+        if (this.state.state === States.ready) {
+            return;
+        }
+
+        this.setState({
+            state: States.ready
+        });
+    },
+    submit: function () {
+        if (this.isEmpty()) {
+            this.empty();
+        } else if (this.isInvalid()) {
+            this.invalid();
+        } else {
+            this.send();
+        }
+    },
+    isEmpty: function () {
+        var value = this.input.value;
+
+        if (value === '') {
+            return true;
+        }
+
+        if (value.match(/^\s+$/)) {
+            return true;;
+        }
+
+        return false;
+    },
+    isInvalid: function () {
+        var value = this.input.value;
+
+        if (value.match(/^[áéíóúÁÉÍÓÚÑñA-Za-z0-9\s]+$/)) {
+            return false;
+        }
+
+        return true;
+    },
+    send: function () {
+        this.props.swapper(this.getModule(), this.getParams());
+        this.input.value = '';
+        this.input.blur();
+    }
+});
+
+module.exports = Search;
+
+},{}],21:[function(require,module,exports){
 var Dispatcher = require('./dispatcher.js');
 var Modules = require('./modules.js');
 
@@ -1802,7 +2308,7 @@ var TargetItem = React.createClass({
 
 module.exports = TargetItem;
 
-},{"./dispatcher.js":4,"./modules.js":16}],18:[function(require,module,exports){
+},{"./dispatcher.js":4,"./modules.js":17}],22:[function(require,module,exports){
 var TargetItem = require('./target_item.js');
 
 var States = {
@@ -1924,7 +2430,7 @@ var TargetList = React.createClass({
 
 module.exports = TargetList;
 
-},{"./target_item.js":17}],19:[function(require,module,exports){
+},{"./target_item.js":21}],23:[function(require,module,exports){
 /*!
  * History API JavaScript Library v4.2.7
  *

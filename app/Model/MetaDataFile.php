@@ -403,4 +403,51 @@ class MetaDataFile extends AppModel {
         
         return false;
     }
+    
+    /* Dado el resultado de HtmldocFullText.searchAll busca el MetaData mas
+     * reciente para cada item encontrado.
+     * 
+     * Ver HtmldocFullText.searchAll
+     */
+    
+    public function findByFts($ids){
+        $results = [];
+        
+        if(is_array($ids) === false){
+            return $results;
+        }
+        
+        foreach($ids as $blob){
+            $id = $blob[0]['data_file_id'];
+            
+            if($this->loadRecentFile($id)){
+                $meta = $this->Data()->dump();
+                $results[] = array_merge($meta,$blob[0]);
+            }
+        }
+        
+        return $results;
+    }
+    
+    /* Carga el MetaData mas reciente que coincida con el DataFile.id */
+    
+    private function loadRecentFile($id){
+        $cnd = [];
+        $cnd['MetaDataFile.data_file_id'] = $id;
+        $order = 'MetaDataFile.id DESC';
+        
+        $meta = $this->find('first',[
+            'conditions' => $cnd,
+            'order' => $order
+        ]);
+        
+        if($meta){
+            $alias = $this->alias;
+            $blob = $meta[$alias];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+    }
 }

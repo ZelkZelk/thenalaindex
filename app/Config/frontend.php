@@ -18,3 +18,9 @@ $config['Frontend.querystring.exploration'] = [
     'hash' => 'hash',
     'target' => 'target'
 ];
+
+$config['Frontend.api.search'] = '/v1/search.json';
+$config['Frontend.url.search'] = '/busqueda/%term%.html';
+$config['Frontend.querystring.search'] = [
+    'q' => 'term',
+];

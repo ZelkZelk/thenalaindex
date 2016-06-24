@@ -128,4 +128,29 @@ class WebserviceVersion1Component extends Component{
         
         $this->Controller->pushOutput($output);
     }
+    
+    /**
+     * Realiza una busqueda de texto completo en el indice de texto completo 
+     * segun el termino de busqueda 'q' ingresado.
+     */
+    
+    public function search(){
+        App::import('Model','HtmldocFullText');
+        $FullText = new HtmldocFullText();
+        
+        App::import('Model','MetaDataFile');
+        $MetaData = new MetaDataFile();
+        
+        $q = $this->Controller->getWebserviceData('q');
+        $files = $FullText->searchAll($q);
+        $results = $MetaData->findByFts($files);
+        
+        $output = [
+            'term' => $q,
+            'results' => $results
+        ];
+        
+        
+        $this->Controller->pushOutput($output);
+    }
 }

@@ -113,18 +113,24 @@ class HtmldocFullText extends AppModel {
     
     /** FTS Query
      
-        SELECT id, title, h1, tsv
+        SELECT data_file_id
         FROM analysis.htmldoc_full_texts, plainto_tsquery('animal') AS q
-        WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery('segundo post')) DESC LIMIT 20;
+        WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery('segundo post')) DESC 
+        LIMIT 20 OFFSET 0;
      
+        Devuelve solo el ID de los data_file_id.
      */
     
-    public function searchAll($term){
-        $db = $this->getDataSource();
-        $sql = "SELECT id, data_file_id, title, h1, tsv
-                FROM analysis.htmldoc_full_texts, plainto_tsquery(?) AS q
-                WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery(?)) DESC LIMIT 20";
+    public function searchAll($term,$offset = 0){
+        Configure::load('fts');
+        $limit = Configure::read('FTS.limit');
         
-        return $db->fetchAll($sql,[ $term, $term ]);
+        $db = $this->getDataSource();
+        $sql = "SELECT data_file_id, h1, title, doctext
+                FROM analysis.htmldoc_full_texts, plainto_tsquery(?) AS q
+                WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery(?)) DESC
+                LIMIT ? OFFSET ?";
+        
+        return $db->fetchAll($sql,[ $term, $term, $limit, $offset ]);
     }
 }
