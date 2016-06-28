@@ -129,11 +129,6 @@ var HistoryList = React.createClass({
 
         return Modules.histories.params(id,target,page);
     },
-    urlResolver : function(module,updateParams){
-        var params = this.getPagedParams(updateParams);
-        var url = Dispatcher.resolvModuleUrl(module,params);
-        return url;
-    },
     getPagedParams : function(params){
         var pagedParams = this.getParams();
 
@@ -142,6 +137,11 @@ var HistoryList = React.createClass({
         }
 
         return pagedParams;
+    },
+    urlResolver : function(module,updateParams){
+        var params = this.getPagedParams(updateParams);
+        var url = Dispatcher.resolvModuleUrl(module,params);
+        return url;
     },
     swapper : function(module,updateParams){
         var params = this.getPagedParams(updateParams);

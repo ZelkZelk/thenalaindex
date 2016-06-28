@@ -21,7 +21,7 @@ var Dispatcher = {
         var slug = string
                         .toLowerCase()
                         .replace(/ /g,'-')
-                        .replace(/[^\w-]+/g,'');
+                        .replace(/[^áéíóúÁÉÍÓÚÑñ\w-]+/g,'');
 
         return slug;
     },

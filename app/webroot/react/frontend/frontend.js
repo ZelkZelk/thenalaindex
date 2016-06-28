@@ -2,6 +2,7 @@ var Runner = require('../components/runner.js');
 var Dispatcher = require('./dispatcher.js');
 var Engine = require('./engine.js');
 var Header = require('./header.js');
+var Menu = require('./menu.js');
 
 var UI = {
     header : function(engine){
@@ -27,11 +28,17 @@ var UI = {
         var renderUI = (
             <div className="wrapper">
                 <div id="upper"></div>
+                <div id="menu"></div>
                 <div id="middle"></div>
             </div>
         );
 
         return renderUI;
+    },
+    menu : function(engine){
+        var swapper = engine.swapModule;
+        var menu = <Menu swapper={swapper} />
+        return menu;
     }
 };
 
@@ -51,5 +58,10 @@ Runner.start(function(){
     var header = ReactDOM.render(
         UI.header(engine),
         document.getElementById('upper')
+    );
+
+    var menu = ReactDOM.render(
+        UI.menu(engine),
+        document.getElementById('menu')
     );
 });
