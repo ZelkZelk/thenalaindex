@@ -30,5 +30,6 @@ $config['Webservice.search'] = [
     'post' => true, 
     'data' => [ 
         'q' => [ 'required' => true, 'type' => 'string' ], 
+        'page' => [ 'default' => 1, 'type' => 'int', 'range' => [ 1, null ] ], 
     ],
 ];

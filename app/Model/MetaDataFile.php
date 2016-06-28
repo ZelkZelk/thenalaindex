@@ -434,17 +434,28 @@ class MetaDataFile extends AppModel {
     private function loadRecentFile($id){
         $cnd = [];
         $cnd['MetaDataFile.data_file_id'] = $id;
-        $order = 'MetaDataFile.id DESC';
+        
+        $joins = [];
+        $joins[] = 'INNER JOIN crawler.urls AS "Url" ON "Url".id="MetaDataFile".url_id';
+        $joins[] = 'INNER JOIN backend.targets AS "Target" ON "Target".id="Url".target_id';
         
         $meta = $this->find('first',[
             'conditions' => $cnd,
-            'order' => $order
+            'joins' => $joins,
+            'fields' => 'MetaDataFile.*, Url.full_url, Target.id, Target.name'
         ]);
         
         if($meta){
             $alias = $this->alias;
             $blob = $meta[$alias];
             $this->loadArray($blob);
+            
+            $full_url = $meta['Url']['full_url'];
+            $target_id = $meta['Target']['id'];
+            $target = $meta['Target']['name'];
+            $this->Data()->write('full_url',$full_url);
+            $this->Data()->write('target_id',$target_id);
+            $this->Data()->write('target',$target);
             return true;
         }
         

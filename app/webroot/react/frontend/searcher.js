@@ -60,6 +60,7 @@ var Search = React.createClass({
     },
     getParams : function(){
         return {
+            page : 1,
             term : this.trim(this.input.value)
         };
     },

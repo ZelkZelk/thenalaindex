@@ -138,18 +138,21 @@ class WebserviceVersion1Component extends Component{
         App::import('Model','HtmldocFullText');
         $FullText = new HtmldocFullText();
         
-        App::import('Model','MetaDataFile');
-        $MetaData = new MetaDataFile();
+        Configure::load('fts');
+        $limit = Configure::read('FTS.limit');
+        
+        $page = $this->Controller->getWebserviceData('page');
+        $offset = ($page - 1) * $limit;
         
         $q = $this->Controller->getWebserviceData('q');
-        $files = $FullText->searchAll($q);
-        $results = $MetaData->findByFts($files);
+        $qterm = preg_replace('/-/', ' ', $q);
+        $results = $FullText->searchAll($qterm,$limit,$offset);
         
         $output = [
-            'term' => $q,
-            'results' => $results
+            'term' => $qterm,
+            'results' => $results,
+            'page' => $page
         ];
-        
         
         $this->Controller->pushOutput($output);
     }

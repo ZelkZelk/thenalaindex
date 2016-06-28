@@ -2,33 +2,34 @@ var Dispatcher = require('./dispatcher.js');
 var Modules = require('./modules.js');
 
 var SearchItem = React.createClass({
-    module : 'histories',
+    module : 'exploration',
     componentWillMount : function(){
         Dispatcher.configure($ReactData.config);
     },
     propTypes: {
-        id : React.PropTypes.number.isRequired,
-        url : React.PropTypes.string.isRequired,
-        name : React.PropTypes.string.isRequired,
-        first_crawl : React.PropTypes.string.isRequired,
-        last_crawl : React.PropTypes.string.isRequired,
-        histories : React.PropTypes.number.isRequired,
+        item : React.PropTypes.object.isRequired,
         swapper : React.PropTypes.func.isRequired
     },
-    readableDate : function(rawDate){
-        var components = rawDate.split(/-/);
-        var year = components[0];
-        var month = components[1];
-        var day = components[2];
+    resolvCreated : function(){
+        var rawDate = this.props.item.created;
+        var components = rawDate.split(/\s/);
+        var date = components[0].split(/-/);
+        var year = date[0];
+        var month = date[1];
+        var day = date[2];
 
         return day + "/" + month + "/" + year;
     },
     getParams : function(){
-        var id = this.props.id;
-        var target = this.props.name;
+        var id = this.props.item.id;
+        var target = this.props.item.full_url;
         var page = 1;
 
-        return Modules.histories.params(id,target,page);
+        return {
+            id : this.props.item.target_id,
+            target : this.props.item.target,
+            hash : this.trim(this.props.item.hash)
+        };
     },
     resolvUrl : function(){
         var url = Dispatcher.resolvModuleUrl(this.module,this.getParams());
@@ -39,23 +40,30 @@ var SearchItem = React.createClass({
         Dispatcher.navigate(this.module,this.getParams(),this.props.swapper);
         return false;
     },
+    resolvURL : function(){
+        var url = this.props.item.full_url;
+        return url;
+    },
+    resolvTitle : function(){
+        var h1 = this.trim(this.props.item.h1);
+
+        if(h1 !== ''){
+            return h1;
+        }
+
+        var title = this.trim(this.props.item.title);
+        return title;
+    },
+    trim : function(str){
+        return str.replace(/^\s+|\s+$/g,'');
+    },
     render: function() {
-        var historial;
-
-        if(this.props.histories > 1){
-            historial = 'historiales';
-        }
-        else{
-            historial = 'historial';
-        }
-
         return (
             <li onClick={this.dispatch}>
                 <a href={this.resolvUrl()}>
-                    <h2>{this.props.name}</h2>
-                    <div><b>URL:</b> {this.props.url} <i>({this.props.histories} {historial})</i></div>
-                    <div><b>Primera Exploracion:</b> {this.readableDate(this.props.first_crawl)}</div>
-                    <div><b>Ultima vez Explorado:</b> {this.readableDate(this.props.last_crawl)}</div>
+                    <h2>{this.resolvTitle()}</h2>
+                    <div><b>URL:</b> {this.resolvURL()}</div>
+                    <div><b>Explorado:</b> {this.resolvCreated()}</div>
                 </a>
             </li>
         );

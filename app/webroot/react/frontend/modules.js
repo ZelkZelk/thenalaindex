@@ -67,9 +67,12 @@ var Modules = {
             var Search = require('./search.js');
             var results = data.results;
             var term = data.term;
+            var page = data.page;
 
             return (
                  <Search
+                    page={page}
+                    swapper={swapper}
                     term={term}
                     results={results}/>
             );
