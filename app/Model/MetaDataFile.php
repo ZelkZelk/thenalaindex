@@ -403,4 +403,62 @@ class MetaDataFile extends AppModel {
         
         return false;
     }
+    
+    /* Dado el resultado de HtmldocFullText.searchAll busca el MetaData mas
+     * reciente para cada item encontrado.
+     * 
+     * Ver HtmldocFullText.searchAll
+     */
+    
+    public function findByFts($ids){
+        $results = [];
+        
+        if(is_array($ids) === false){
+            return $results;
+        }
+        
+        foreach($ids as $blob){
+            $id = $blob[0]['data_file_id'];
+            
+            if($this->loadRecentFile($id)){
+                $meta = $this->Data()->dump();
+                $results[] = array_merge($meta,$blob[0]);
+            }
+        }
+        
+        return $results;
+    }
+    
+    /* Carga el MetaData mas reciente que coincida con el DataFile.id */
+    
+    private function loadRecentFile($id){
+        $cnd = [];
+        $cnd['MetaDataFile.data_file_id'] = $id;
+        
+        $joins = [];
+        $joins[] = 'INNER JOIN crawler.urls AS "Url" ON "Url".id="MetaDataFile".url_id';
+        $joins[] = 'INNER JOIN backend.targets AS "Target" ON "Target".id="Url".target_id';
+        
+        $meta = $this->find('first',[
+            'conditions' => $cnd,
+            'joins' => $joins,
+            'fields' => 'MetaDataFile.*, Url.full_url, Target.id, Target.name'
+        ]);
+        
+        if($meta){
+            $alias = $this->alias;
+            $blob = $meta[$alias];
+            $this->loadArray($blob);
+            
+            $full_url = $meta['Url']['full_url'];
+            $target_id = $meta['Target']['id'];
+            $target = $meta['Target']['name'];
+            $this->Data()->write('full_url',$full_url);
+            $this->Data()->write('target_id',$target_id);
+            $this->Data()->write('target',$target);
+            return true;
+        }
+        
+        return false;
+    }
 }

@@ -113,18 +113,54 @@ class HtmldocFullText extends AppModel {
     
     /** FTS Query
      
-        SELECT id, title, h1, tsv
+        SELECT data_file_id
         FROM analysis.htmldoc_full_texts, plainto_tsquery('animal') AS q
-        WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery('segundo post')) DESC LIMIT 20;
+        WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery('segundo post')) DESC 
+        LIMIT 20 OFFSET 0;
      
+        Devuelve solo el ID de los data_file_id.
      */
     
-    public function searchAll($term){
-        $db = $this->getDataSource();
-        $sql = "SELECT id, data_file_id, title, h1, tsv
-                FROM analysis.htmldoc_full_texts, plainto_tsquery(?) AS q
-                WHERE (tsv @@ q) ORDER BY ts_rank_cd(tsv, plainto_tsquery(?)) DESC LIMIT 20";
+    public function searchAll($term,$limit,$offset = 0){
+        $query = preg_replace('/\s+/', ' & ', $term);
         
-        return $db->fetchAll($sql,[ $term, $term ]);
+        $db = $this->getDataSource();
+        $sql = "SELECT h1,title,hash,full_url,target.id AS target_id,target.name AS target,ftsfileid data_file_id,metadata.created
+                FROM analysis.htmldoc_full_texts
+                INNER JOIN (
+                    SELECT 
+                        ftsuniq.data_file_id ftsfileid, ftsuniq.id ftsid, meta.id metaid
+                    FROM
+                        (
+                            SELECT max(id)  id,data_file_id  
+                            FROM analysis.htmldoc_full_texts fts group by data_file_id 
+                        ) ftsuniq
+                    INNER JOIN 
+                        (
+                            SELECT max(id) id, max(data_file_id) data_file_id,url_id 
+                            FROM crawler.meta_data_files group by url_id
+                        ) meta
+                    ON ftsuniq.data_file_id=meta.data_file_id
+                ) Cartesian
+                ON Cartesian.ftsid=analysis.htmldoc_full_texts.id
+                INNER JOIN crawler.meta_data_files metadata 
+                    ON metadata.id=Cartesian.metaid
+                INNER JOIN crawler.urls url 
+                    ON url.id=metadata.url_id
+                INNER JOIN backend.targets target 
+                    ON target.id=url.target_id
+                , plainto_tsquery(?) AS q
+                    WHERE (tsv @@ q) 
+                    ORDER BY ts_rank_cd(tsv, plainto_tsquery(?)) DESC
+                    LIMIT ? OFFSET ?";
+        
+        $raw = $db->fetchAll($sql,[ $query, $query, $limit, $offset ]);
+        $results = [];
+        
+        foreach($raw as $row){
+            $results[] = $row[0];
+        }
+        
+        return $results;
     }
 }

@@ -24,3 +24,12 @@ $config['Webservice.exploration'] = [
         'hash' => [ 'required' => true, 'type' => 'string' ], 
     ],
 ];
+
+$config['Webservice.search'] = [
+    'get' => true, 
+    'post' => true, 
+    'data' => [ 
+        'q' => [ 'required' => true, 'type' => 'string' ], 
+        'page' => [ 'default' => 1, 'type' => 'int', 'range' => [ 1, null ] ], 
+    ],
+];
