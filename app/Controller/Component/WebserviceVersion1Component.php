@@ -99,6 +99,15 @@ class WebserviceVersion1Component extends Component{
             throw new NotFoundException("MetaDataFile@hash:{$hash} not found");
         }
         
+        App::import('Model','DataFile');
+        $DataFile = new DataFile();
+        $DataFile->shiftSchema('checksum');
+        $data_file_id = $MetaDataFile->Data()->read('data_file_id');
+        
+        if($DataFile->loadFromId($data_file_id) === false){
+            throw new NotFoundException("DataFile@id:{$data_file_id} not found");
+        }
+        
         App::import('Model','Url');
         $Url = new Url();
         $url_id = $MetaDataFile->Data()->read('url_id');
@@ -117,12 +126,14 @@ class WebserviceVersion1Component extends Component{
         
         Configure::load('analysis');
         $link = Configure::read('Analysis.cdn_webservice') . $hash;
+        $meta = $MetaDataFile->Data()->dump();
+        $meta['checksum'] = $DataFile->Data()->read('checksum');
         
         $output = [
             'link' => $link,
             'analysis' => [],
             'target' => $Target->Data()->dump(),
-            'meta' => $MetaDataFile->Data()->dump(),
+            'meta' => $meta,
             'url' => $Url->Data()->dump()
         ];
         

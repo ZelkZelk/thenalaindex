@@ -26,12 +26,31 @@ class DataFile extends AppModel {
             'readable' => true,
         ),
     ];
+    
+    private $checksumSchema = [
+        'checksum' => array(
+            'type' => 'text',
+            'required' => true,
+            'unique' => true,
+            'label' => 'Checksum',
+            'writable' => false,
+            'readable' => true,
+        ),
+    ];
+    
+    public function shiftSchema($which){
+        $this->schema = $which;
+    }
 
     public function getSchema() {
         switch($this->schema){
             case 'default': 
                 $schema = $this->defaultSchema;
                 $this->labelField = 'meta_data_file_id';
+                return $schema;
+            case 'checksum': 
+                $schema = $this->checksumSchema;
+                $this->labelField = 'checksum';
                 return $schema;
         }
         
