@@ -254,7 +254,7 @@ class WordCountAnalyzerComponent extends CrawlerUtilityComponent{
             $w1 = $this->clearWord($word);
             $w2 = $this->filterSymbols($w1);
             $w3 = $this->filterCompounds($w2);
-            $w = Inflector::singularize(strtolower($w3));
+            $w = strtolower($w3);
             
             if($w === false){
                 continue;
@@ -345,7 +345,16 @@ class WordCountAnalyzerComponent extends CrawlerUtilityComponent{
             
             if($this->NotableWord->existsWord($word) === false){
                 $this->logAnalyzer("FAIL<word:$word,due:not in my dictionary>");
-                continue;
+                
+                $singular = Inflector::singularize($word);
+                $this->logAnalyzer("SINGULAR<word:$word,singular:$singular>");
+                
+                if($this->NotableWord->existsWord($word) === false){
+                    $this->logAnalyzer("FAIL<word:$word,due:not in my dictionary>");
+                    continue;
+                }
+                
+                $word = $singular;
             }
             
             if($this->HtmldocNotableWord->pushWord($this->DataFile,$this->NotableWord,$freq) === false){

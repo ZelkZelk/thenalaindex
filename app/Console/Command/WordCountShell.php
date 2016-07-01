@@ -26,7 +26,7 @@ class WordCountShell extends AppShell {
         $words = [ 
             'peces', 'aves','monos', 'arboles','materiales', 'mamones', 
             'caramelos','perdices','reyes','rey','mano', 'tomates', 'helechos',
-            'camiones', 'anises' ];
+            'camiones', 'anises', 'viernes' ];
         
         foreach($words as $word){
             echo Inflector::singularize($word) . "\n";
