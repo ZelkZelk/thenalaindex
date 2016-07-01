@@ -25,6 +25,13 @@ App::uses('Shell', 'Console');
  *
  * @package       app.Console.Commando
  */
+
+if( !defined('SHELL_CURRENT_PATH')){
+    $path = dirname(__FILE__);
+    define('SHELL_CURRENT_PATH',$path);
+}
+
+
 class AppShell extends Shell {
     public $uses = [ 'Target' ];
     

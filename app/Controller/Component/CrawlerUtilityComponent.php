@@ -4,7 +4,7 @@
 
 class CrawlerUtilityComponent extends Component{
     public function __call($method, $args){
-        if(is_callable(array($this, $method))) {            
+        if(is_callable(array($this, $method))) {  
             if(call_user_func_array($this->$method, $args) === false){
                 echo get_called_class() . '::' . $method . "\n";
             }
