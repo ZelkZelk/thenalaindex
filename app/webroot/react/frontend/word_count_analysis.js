@@ -27,8 +27,6 @@ var UI = {
             });
         }
 
-        console.debug(tags)
-
         tagCloud.tagCloud(tags,function (err, data) {
             cloud = {
                 __html : data
