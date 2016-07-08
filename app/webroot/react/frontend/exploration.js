@@ -4,6 +4,7 @@ var HtmlUrlViewer = require('./html_url_viewer.js');
 var HTMLStats = require('./html_stats.js');
 var Modules = require('./modules.js');
 var HttpClient = require('../components/http_client.js');
+var WordCountAnalysis = require('./word_count_analysis.js');
 
 var UI = {
     get : function(react){
@@ -12,6 +13,7 @@ var UI = {
         var swapper = react.swapper;
         var link = react.props.link;
         var meta = react.props.meta;
+        var analysis = react.props.analysis;
 
         var renderUI = (
             <div id="exploration" className="module_wrapper">
@@ -32,6 +34,12 @@ var UI = {
                             react.stats = ref;
                         }}
                         meta={meta} />
+
+                    <WordCountAnalysis
+                        ref={function(ref){
+                            react.analysis.wc = ref;
+                        }}
+                        analysis={analysis.wc} />
                 </div>
             </div>
         );
@@ -44,6 +52,7 @@ var Exploration = React.createClass({
     request : null,
     urlViewer : null,
     stats : null,
+    analysis : {},
     module : 'exploration',
     componentWillMount : function(){
         Dispatcher.configure($ReactData.config);
@@ -85,6 +94,7 @@ var Exploration = React.createClass({
     ajaxOnStart : function(){
         this.urlViewer.loading();
         this.stats.loading();
+        this.analysis.wc.loading();
     },
     ajaxOnError : function(module,params){
         var callback = this.swapperCallback.bind(this,module,params);
@@ -95,9 +105,11 @@ var Exploration = React.createClass({
     ajaxOnSuccess : function(data){
         var url = data.url;
         var meta = data.meta;
+        var analysis = data.analysis;
 
         this.urlViewer.done(url.full_url);
         this.stats.done(meta);
+        this.analysis.wc.done(analysis.wc);
     },
     getParams : function(hash){
         return Modules.exploration.params(this.props.target.id,hash,this.props.target.name);

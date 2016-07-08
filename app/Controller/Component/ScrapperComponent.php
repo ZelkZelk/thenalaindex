@@ -391,6 +391,28 @@ class ScrapperComponent extends CrawlerUtilityComponent{
     }
     
     /**
+     * Realiza el scrapping de conteo de palabras.
+     * 
+     *      * Carga el HTML en memoria
+     *      * Scrap del Texto
+     */
+    
+    public function scrapWords($textHtml){
+        libxml_use_internal_errors(true);
+        $this->Dom = new DOMDocument();
+        
+        if(@$this->Dom->loadHTML($textHtml)){        
+            $this->scrapText();   
+        }
+        else{
+            $this->logInfo('Invalid HTML');
+        }
+        
+        libxml_use_internal_errors(false);
+        libxml_use_internal_errors(true);
+    }
+    
+    /**
      * Realiza el scrapping de texto completo.
      * 
      *      * Carga el HTML en memoria

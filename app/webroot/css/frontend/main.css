@@ -94,6 +94,43 @@ div.wrapper div.module_wrapper {
         margin-bottom: 10px; }
         div.wrapper div.module_wrapper div.col-1-4 div.col .stat-row .stat-label {
           font-weight: bold; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .analysis-row {
+        padding-top: 10px;
+        display: block; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .analysis-title {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #305074;
+        margin-top: 30px;
+        border-left: #103054 20px solid;
+        padding-left: 20px; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud span {
+        display: inline-block;
+        margin-right: 5px;
+        margin-top: 5px;
+        padding: 5px;
+        border-radius: 3px 3px;
+        background: #a5a5a4; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket0 {
+        font-size: 0.5em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket1 {
+        font-size: 0.6em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket2 {
+        font-size: 0.7em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket3 {
+        font-size: 0.8em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket4 {
+        font-size: 0.9em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket5 {
+        font-size: 1.0em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket6 {
+        font-size: 1.1em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket7 {
+        font-size: 1.2em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket8 {
+        font-size: 1.3em; }
+      div.wrapper div.module_wrapper div.col-1-4 div.col .tag-cloud .bucket9 {
+        font-size: 1.4em; }
   div.wrapper div.module_wrapper div.col-3-4 {
     width: 65%;
     display: inline-block;
