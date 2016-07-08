@@ -129,9 +129,14 @@ class WebserviceVersion1Component extends Component{
         $meta = $MetaDataFile->Data()->dump();
         $meta['checksum'] = $DataFile->Data()->read('checksum');
         
+        App::import('Model','HtmldocNotableWord');
+        $HtmldocNotableWord = new HtmldocNotableWord();
+        
         $output = [
             'link' => $link,
-            'analysis' => [],
+            'analysis' => [
+                'wc' => $HtmldocNotableWord->retrieveAnalysis($data_file_id)
+            ],
             'target' => $Target->Data()->dump(),
             'meta' => $meta,
             'url' => $Url->Data()->dump()

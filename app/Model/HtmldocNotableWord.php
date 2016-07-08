@@ -105,7 +105,38 @@ class HtmldocNotableWord extends AppModel {
             $this->loadArray($blob);
             return true;
         }
-        Inflector::singularize($word);
+        
         return false;
+    }
+    
+    /**
+     * Obtiene la info del analisis realizado sobre el $data_file_id especificado
+     */
+    
+    public function retrieveAnalysis($data_file_id){
+        $cnd = [];
+        $cnd['HtmldocNotableWord.data_file_id'] = $data_file_id;
+        
+        $joins = [];
+        $joins[] = 'INNER JOIN dictionary.notable_words AS "NotableWord" ON "NotableWord".id="HtmldocNotableWord".notable_word_id ';
+        
+        $opts = [];
+        $opts['conditions'] = $cnd;
+        $opts['joins'] = $joins;
+        $opts['fields'] = 'HtmldocNotableWord.quantity, NotableWord.word';
+        
+        $data = $this->find('all', $opts);
+        $analysis = [];
+        
+        if($data){
+            foreach($data as $blob){
+                $analysis[] = [
+                    'word' => $blob['NotableWord']['word'],
+                    'f' => $blob['HtmldocNotableWord']['quantity'],
+                ];
+            }
+        }
+        
+        return $analysis;
     }
 }
