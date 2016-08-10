@@ -95,9 +95,9 @@ div.wrapper div.module_wrapper {
         div.wrapper div.module_wrapper div.col-1-4 div.col .stat-row .stat-label {
           font-weight: bold; }
       div.wrapper div.module_wrapper div.col-1-4 div.col .analysis-row {
-        padding-top: 10px;
         display: block; }
       div.wrapper div.module_wrapper div.col-1-4 div.col .analysis-title {
+        margin-bottom: 10px;
         font-weight: bold;
         font-size: 1.1em;
         color: #305074;
