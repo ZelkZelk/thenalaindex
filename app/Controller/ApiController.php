@@ -35,7 +35,7 @@ class ApiController extends AppController {
      */
     
     private function jsonHeaders(){
-        header('Content-Type: text/json');
+        header('Content-Type: application/json');
     }
     
     /* Se basa en los keys del array asociativo de la configuracion par

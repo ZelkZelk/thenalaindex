@@ -24,3 +24,9 @@ $abm01['dropApi'] = Router::url([ 'controller' => 'api','action' => 'drop', 'ctr
 // LOAD
 
 $config['ReactApi']['notifications']['email'] = $abm01;
+
+/* Dictionary Emotional */
+
+$config['ReactApi']['dictionaries']['emotional'] = [
+    'url' => Router::url([ 'controller' => 'dictionaries','action' => 'api','module' => 'emotional' ],true),
+];

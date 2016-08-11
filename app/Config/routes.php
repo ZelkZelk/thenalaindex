@@ -33,10 +33,10 @@ Router::connect('/notificaciones/email.html', array('controller' => 'notificatio
 
 /* API para ReactComponents */
 
-Router::connect('/api/:ctrl/:actn/feed.js', array('controller' => 'api', 'action' => 'feed'), ['ctrl','actn']);
-Router::connect('/api/:ctrl/:actn/push.js', array('controller' => 'api', 'action' => 'push'), ['ctrl','actn']);
-Router::connect('/api/:ctrl/:actn/edit.js', array('controller' => 'api', 'action' => 'edit'), ['ctrl','actn']);
-Router::connect('/api/:ctrl/:actn/drop.js', array('controller' => 'api', 'action' => 'drop'), ['ctrl','actn']);
+Router::connect('/api/:ctrl/:actn/feed.json', array('controller' => 'api', 'action' => 'feed'), ['ctrl','actn']);
+Router::connect('/api/:ctrl/:actn/push.json', array('controller' => 'api', 'action' => 'push'), ['ctrl','actn']);
+Router::connect('/api/:ctrl/:actn/edit.json', array('controller' => 'api', 'action' => 'edit'), ['ctrl','actn']);
+Router::connect('/api/:ctrl/:actn/drop.json', array('controller' => 'api', 'action' => 'drop'), ['ctrl','actn']);
 
 /* Webservices */
 
@@ -52,3 +52,8 @@ Router::connect('/busqueda/pag::page/:term.html', array('controller' => 'fronten
 /* Asset Server */
 
 Router::connect('/asset/:hash', array('controller' => 'assets', 'action' => 'index'));
+
+/* Diccionarios */
+
+Router::connect('/diccionarios/valoracion-emocional.html', array('controller' => 'dictionaries', 'action' => 'emotional'));
+Router::connect('/diccionarios/api/:module.json', array('controller' => 'dictionaries', 'action' => 'api'), [ 'module' ]);
