@@ -219,14 +219,19 @@ class MetaDataFile extends AppModel {
      */
     
     public function createMetaData(CrawlerLog $Log,$headerData = []){
+        if($this->loadHash($headerData['hash']) === true){
+            return true;
+        }
+        
+        if($this->load($Log->id,$headerData['url_id']) === true){
+            return true;
+        }
+        
         $data = $headerData;
         $data['crawler_log_id'] = $Log->id;
-        
-        if($this->load($Log->id,$headerData['url_id']) === false){
-            $data['created'] = date('Y-m-d H:i:s');
-            $data['id'] = null;
-            $this->id = null;
-        }
+        $data['created'] = date('Y-m-d H:i:s');
+        $data['id'] = null;
+        $this->id = null;
         
         $this->loadArray($data);
         return $this->store();
