@@ -219,10 +219,6 @@ class MetaDataFile extends AppModel {
      */
     
     public function createMetaData(CrawlerLog $Log,$headerData = []){
-        if($this->loadHash($headerData['hash']) === true){
-            return true;
-        }
-        
         if($this->load($Log->id,$headerData['url_id']) === true){
             return true;
         }
