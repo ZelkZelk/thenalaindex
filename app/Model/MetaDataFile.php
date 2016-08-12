@@ -219,24 +219,19 @@ class MetaDataFile extends AppModel {
      */
     
     public function createMetaData(CrawlerLog $Log,$headerData = []){
-        try{
-            if($this->load($Log->id,$headerData['url_id']) === true){
-                return true;
-            }
-
-            $data = $headerData;
-            $data['crawler_log_id'] = $Log->id;
-            $data['created'] = date('Y-m-d H:i:s');
-            $data['id'] = null;
-            $this->id = null;
-
-            $this->loadArray($data);
-            return $this->store();
+        if($this->load($Log->id,$headerData['url_id']) === true){
+            return true;
         }
-        catch(Exception $e){
-            error_log($e->getMessage());
-            return $this->createMetaData($Log, $headerData);
-        }
+
+        $data = $headerData;
+        $data['crawler_log_id'] = $Log->id;
+        $data['created'] = date('Y-m-d H:i:s');
+        $data['id'] = null;
+        $this->id = null;
+
+        $this->Data()->remove('hash');
+        $this->loadArray($data);
+        return $this->store();
     }
     
     /* Carga el registro segun la tupla Crawler:Url */
