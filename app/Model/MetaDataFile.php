@@ -381,11 +381,15 @@ class MetaDataFile extends AppModel {
             'conditions' => $cnd
         ]);
         
+        echo "loading: $hash\n";
+        
         if($data){
             $alias = $this->alias;
             $blob = $data[$alias];
             $this->loadArray($blob);
+            echo "loaded: $hash\n";
         }
+        
         
         return $data ? true : false;
     }
