@@ -101,6 +101,41 @@ class NotableWord extends AppModel {
         return false;
     }
     
+    /* Busca una palabra que este pendiente de acuerdo al modulo de diccionario */
+    
+    public function loadPending($module){
+        switch ($module){
+            case 'emotional':
+                return $this->loadPendingEmotional();
+        }
+        
+        return false;
+    }
+    
+    /* Actualiza la palabra pendiente segun modulo de diccionario */
+    
+    public function updatePending($module,$id,$value){
+        switch ($module){
+            case 'emotional':
+                return $this->updateEmotional($id,$value);
+        }
+        
+        return false;
+    }
+    
+    /* Actualiza el valor emocionalde la palabra */
+    
+    private function updateEmotional($id,$value){
+        if($this->loadFromId($id)){
+            $this->id = $id;
+            $this->Data()->write('emotional_value',$value);
+            error_log(serialize($this->Data()->dump()));
+            return $this->store();
+        }
+        
+        return false;
+    }
+    
     /* Busca una palabra que este pendiente de analisis emocional */
     
     public function loadPendingEmotional(){

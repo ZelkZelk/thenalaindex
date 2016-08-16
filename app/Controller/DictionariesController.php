@@ -20,26 +20,15 @@ class DictionariesController extends BackendAppController {
     }
     
     public function api(){
+//        throw new BadRequestException();
         header('Content-Type: application/json');
         $this->autoRender = false;
-        $word = false;
-        $id = false;
         
-        if($this->NotableWord->loadPendingEmotional()){
-            $blob = $this->NotableWord->Data()->dump();
-            $word = $blob['word'];
-            $id = $blob['id'];
+        if($this->request->is('POST')){
+            $this->apiPost();
         }
         
-        $module = $this->params['module'];
-        $options = $this->NotableWord->resolvDictionaryOptions($module);
-        
-        $data = [
-            'id' => $id,
-            'word' => $word,
-            'options' => $options,
-            'reference' => $this->resolvReference($word)
-        ];
+        $data = $this->apiGet();
         
         ob_start();
         echo json_encode($data);
@@ -51,5 +40,35 @@ class DictionariesController extends BackendAppController {
         Configure::load('dictionary');
         $url = sprintf(Configure::read('Dictionary.url'),$word);
         return $url;
+    }
+
+    private function apiPost() {
+        $module = $this->params['module'];
+        $id = $this->data['id'];
+        $value = $this->data['value'];
+        $this->NotableWord->updatePending($module,$id,$value);
+    }
+
+    private function apiGet() {
+        $word = false;
+        $id = false;
+        $module = $this->params['module'];
+        
+        if($this->NotableWord->loadPending($module)){
+            $blob = $this->NotableWord->Data()->dump();
+            $word = $blob['word'];
+            $id = $blob['id'];
+        }
+        
+        $options = $this->NotableWord->resolvDictionaryOptions($module);
+        
+        $data = [
+            'id' => $id,
+            'word' => $word,
+            'options' => $options,
+            'reference' => $this->resolvReference($word)
+        ];
+        
+        return $data;
     }
 }

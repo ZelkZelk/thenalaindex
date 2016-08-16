@@ -10,6 +10,27 @@ var HttpClient = function(){
     this.response = null;
     this.error = false;
 
+    this.postJson = function(url,data,callbacks){
+        this.data = data;
+        this.url = url;
+        this.type = 'POST';
+        this.dataType = 'json';
+
+        if(typeof callbacks.error !== 'undefined'){
+            this.errorCallback = callbacks.error;
+        }
+
+        if(typeof callbacks.done !== 'undefined'){
+            this.doneCallback = callbacks.done;
+        }
+
+        if(typeof callbacks.always !== 'undefined'){
+            this.alwaysCallback = callbacks.always;
+        }
+
+        this.request(data);
+    };
+
     this.getJson = function(url,callbacks){
         this.data = [];
         this.url = url;
@@ -73,7 +94,25 @@ var HttpClient = function(){
         };
 
         this.xhr = xhr;
-        xhr.send();
+
+        if(this.type === 'POST'){
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhr.send(this.getPostData());
+        }
+        else{
+            xhr.send();
+        }
+    }
+
+    this.getPostData = function(){
+        var data = '';
+
+        for(var field in this.data){
+            var value = this.data[field];
+            data += field + "=" + value + "&";
+        }
+
+        return data.substr(0,data.length - 1);
     }
 
     this.getRequestData = function(){

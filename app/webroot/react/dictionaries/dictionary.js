@@ -18,17 +18,32 @@ var UI = {
     },
     push : function(react){
         return (
-            <div>push</div>
+            <div>
+                <i className="fa fa-spinner fa-spin fa-fw"></i> Enviando...
+            </div>
         );
     },
     pullError : function(react){
         return (
-            <div>pull error</div>
+            <div>
+                <div><b>Error de Conexion!!</b></div>
+                <div className="buttons">
+                    <button className="btn blue-hoki" onClick={react.pull}>Reintentar</button>
+                </div>
+            </div>
         );
     },
     pushError : function(react){
+        var id = react.state.post.id;
+        var value = react.state.post.value;
+
         return (
-            <div>push error</div>
+            <div>
+                <div><b>Error de Conexion!!</b></div>
+                <div className="buttons">
+                    <button className="btn blue-hoki" onClick={react.push.bind(null,id,value)}>Reintentar</button>
+                </div>
+            </div>
         );
     },
     empty : function(react){
@@ -42,14 +57,15 @@ var UI = {
         var buttons = Object.keys(data.options).map(function(value){
             var label = data.options[value];
             return (
-                <button onClick={react.push.bind(data.id, value)} key={value} value={value}>{label}</button> );
+                <button className="btn blue-hoki" onClick={react.push.bind(null,data.id,value)} key={value} value={value}>{label}</button>
+            );
         });
 
         return (
             <div>
                 <div><b>Palabra:</b> {data.word}</div>
                 <div><b>Referencia:</b> <a href={data.reference} target="_blank">click aqui</a></div>
-                {buttons}
+                <div className="buttons">{buttons}</div>
             </div>
         );
     },
@@ -86,6 +102,15 @@ var Dictionary = React.createClass({
             state : States.pull
         }, this.pullRequest);
     },
+    push : function(id,value){
+        this.setState({
+            state : States.push,
+            post : {
+                id : id,
+                value : value
+            }
+        }, this.pushRequest);
+    },
     pullRequest : function(){
         if(this.request !== null){
             this.request.abort();
@@ -95,6 +120,18 @@ var Dictionary = React.createClass({
 
         this.request.getJson(this.props.api,{
             error : this.pullError,
+            done : this.pullSuccess
+        });
+    },
+    pushRequest : function(){
+        if(this.request !== null){
+            this.request.abort();
+        }
+
+        this.request = new HttpClient();
+
+        this.request.postJson(this.props.api,this.state.post,{
+            error : this.pushError,
             done : this.pullSuccess
         });
     },
@@ -109,6 +146,11 @@ var Dictionary = React.createClass({
     pullError : function(){
         this.setState({
             state : States.pullError
+        });
+    },
+    pushError : function(){
+        this.setState({
+            state : States.pushError
         });
     },
     ready : function(data){
