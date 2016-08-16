@@ -15,6 +15,19 @@ class NotableWord extends AppModel {
             'writable' => false,
             'readable' => true,
         ),
+        'emotional_value' => array(
+            'required' => true,
+            'type' => 'options',
+            'label' => 'Valor Emocional',
+            'writable' => true,
+            'readable' => true,
+            'options' => [
+                'unset' => 'No Establecido',
+                'positive' => 'Positivo',
+                'negative' => 'Negativo',
+                'neutral' => 'Neutral'
+            ]
+        )
     ];
 
     public function getSchema() {
@@ -86,5 +99,75 @@ class NotableWord extends AppModel {
         }
         
         return false;
+    }
+    
+    /* Busca una palabra que este pendiente de acuerdo al modulo de diccionario */
+    
+    public function loadPending($module){
+        switch ($module){
+            case 'emotional':
+                return $this->loadPendingEmotional();
+        }
+        
+        return false;
+    }
+    
+    /* Actualiza la palabra pendiente segun modulo de diccionario */
+    
+    public function updatePending($module,$id,$value){
+        switch ($module){
+            case 'emotional':
+                return $this->updateEmotional($id,$value);
+        }
+        
+        return false;
+    }
+    
+    /* Actualiza el valor emocionalde la palabra */
+    
+    private function updateEmotional($id,$value){
+        if($this->loadFromId($id)){
+            $this->id = $id;
+            $this->Data()->write('emotional_value',$value);
+            error_log(serialize($this->Data()->dump()));
+            return $this->store();
+        }
+        
+        return false;
+    }
+    
+    /* Busca una palabra que este pendiente de analisis emocional */
+    
+    public function loadPendingEmotional(){
+        $cnd = [];
+        $cnd['NotableWord.emotional_value'] = 'unset';
+        
+        $row = $this->find('first',[
+            'conditions' => $cnd,
+            'order' => 'random()'
+        ]);
+        
+        if($row){
+            $blob = $row['NotableWord'];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /* Resuelve las opciones a setear por interface de diccionario */
+    
+    public function resolvDictionaryOptions($module){
+        $options = [];
+        
+        switch($module){
+            case 'emotional':
+                $options = $this->getSchema()['emotional_value']['options'];
+                unset($options['unset']);
+                break;
+        }
+        
+        return $options;
     }
 }

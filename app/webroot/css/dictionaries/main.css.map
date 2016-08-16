@@ -1,0 +1,7 @@
+{
+"version": 3,
+"mappings": "AACI,0BAAY;EACR,UAAU,EAAC,IAAI;EAEf,uDAA4B;IACxB,WAAW,EAAC,GAAG",
+"sources": ["../../sass/dictionaries/main.scss"],
+"names": [],
+"file": "main.css"
+}

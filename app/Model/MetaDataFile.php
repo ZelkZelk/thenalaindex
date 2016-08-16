@@ -219,14 +219,42 @@ class MetaDataFile extends AppModel {
      */
     
     public function createMetaData(CrawlerLog $Log,$headerData = []){
-        $data = $headerData;
-        $data['created'] = date('Y-m-d H:i:s');
-        $data['crawler_log_id'] = $Log->id;
-        $data['id'] = null;
+        if($this->loadHash($headerData['hash']) === true){
+            return true;
+        }
         
+        if($this->load($Log->id,$headerData['url_id']) === true){
+            return true;
+        }
+        
+        $data = $headerData;
+        $data['crawler_log_id'] = $Log->id;
+        $data['created'] = date('Y-m-d H:i:s');
+        $data['id'] = null;
         $this->id = null;
+        
         $this->loadArray($data);
         return $this->store();
+    }
+    
+    /* Carga el registro segun la tupla Crawler:Url */
+    
+    private function load($crawler_log_id,$url_id){
+        $cnd = [];
+        $cnd['MetaDataFile.crawler_log_id'] = $crawler_log_id;
+        $cnd['MetaDataFile.url_id'] = $url_id;
+        
+        $row = $this->find('first',[
+            'conditions' => $cnd
+        ]);
+        
+        if($row){
+            $blob = $row['MetaDataFile'];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
     }
     
     /* Relaciona el meta data file con el archivo almacenado en  DataFile. */

@@ -1,0 +1,6 @@
+div.dictionary div.buttons {
+  margin-top: 15px; }
+  div.dictionary div.buttons button.btn:not(:first-child) {
+    margin-left: 5px; }
+
+/*# sourceMappingURL=main.css.map */

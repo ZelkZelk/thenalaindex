@@ -165,3 +165,12 @@ $config['frontend']['index'] = [
     'icon' => 'web',
     'private' => false,
 ];
+
+
+/* Diccionarios. */
+
+$config['dictionaries']['emotional'] = [
+    'title' => 'Diccionario de Valoracion Emocional',
+    'icon' => 'meh-o',
+    'private' => true
+];

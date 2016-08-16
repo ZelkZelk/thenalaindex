@@ -18,3 +18,7 @@ $config['react']['notifications']['email'] = '/react/notifications/main.js';
 /* React global para el frontend */
 
 $config['react']['frontend']['index'] = '/react/frontend/main.js';
+
+/* React para el modulo de Diccionarios */
+
+$config['react']['dictionaries']['emotional'] = '/react/dictionaries/main.js';

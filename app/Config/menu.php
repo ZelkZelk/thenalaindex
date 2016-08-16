@@ -35,3 +35,12 @@ $config['menu']['notif'] = [
 $config['menu']['notif']['actions'] = [
     [ 'notifications', 'email' ],
 ];
+
+$config['menu']['dic'] = [
+    'icon' => 'book',
+    'title' => 'Diccionarios'
+];
+
+$config['menu']['dic']['actions'] = [
+    [ 'dictionaries', 'emotional' ],
+];
