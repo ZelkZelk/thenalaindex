@@ -43,6 +43,15 @@ class TesterShell extends AppShell {
         echo "USAGE=<$usage> REAL=<$real>\n";
     }
     
+    public function hashing(){
+        $hash = "1314951058904057255             ";
+        $Meta = new MetaDataFile();
+        
+        if($Meta->loadHash(trim($hash))){
+            echo "loaded: $hash\n";
+        }
+    }
+    
     public function memory(){
         $this->memoryReport();
         $this->DataFile = new DataFile();        

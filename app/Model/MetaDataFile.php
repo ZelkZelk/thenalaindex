@@ -219,20 +219,17 @@ class MetaDataFile extends AppModel {
      */
     
     public function createMetaData(CrawlerLog $Log,$headerData = []){
-        if($this->loadHash($headerData['hash']) === true){
-            return true;
-        }
-        
         if($this->load($Log->id,$headerData['url_id']) === true){
             return true;
         }
-        
+
         $data = $headerData;
         $data['crawler_log_id'] = $Log->id;
         $data['created'] = date('Y-m-d H:i:s');
         $data['id'] = null;
         $this->id = null;
-        
+
+        $this->Data()->remove('hash');
         $this->loadArray($data);
         return $this->store();
     }
@@ -381,11 +378,15 @@ class MetaDataFile extends AppModel {
             'conditions' => $cnd
         ]);
         
+        echo "loading: $hash\n";
+        
         if($data){
             $alias = $this->alias;
             $blob = $data[$alias];
             $this->loadArray($blob);
+            echo "loaded: $hash\n";
         }
+        
         
         return $data ? true : false;
     }

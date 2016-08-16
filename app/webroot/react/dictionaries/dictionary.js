@@ -192,7 +192,6 @@ var Dictionary = React.createClass({
     },
 });
 
-
 Runner.start(function(){
     var frontend = ReactDOM.render(
         UI.dictionary($ReactData),

@@ -671,6 +671,12 @@ interface ReactApiModel {
     
 class ModelData{    
     
+    /* Elimina el field del modelo */
+    
+    public function remove($field){
+        unset($this->{$field});
+    }
+    
     /* Devuelve en forma de array los datos contenidos . */
     
     public function dump(){
