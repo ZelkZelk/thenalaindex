@@ -129,7 +129,6 @@ class NotableWord extends AppModel {
         if($this->loadFromId($id)){
             $this->id = $id;
             $this->Data()->write('emotional_value',$value);
-            error_log(serialize($this->Data()->dump()));
             return $this->store();
         }
         

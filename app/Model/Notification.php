@@ -228,7 +228,6 @@ class Notification extends AppModel implements ReactApiModel {
             $api->setData($response);
         }
         else{
-            error_log(serialize($this->validationErrors));
             $api->setError('Error al guardar Lista');                
         }        
     }
