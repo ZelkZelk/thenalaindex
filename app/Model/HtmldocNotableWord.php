@@ -139,4 +139,16 @@ class HtmldocNotableWord extends AppModel {
         
         return $analysis;
     }
+
+    public function fetchPage(DataFile $dataFile, $offset, $limit) {
+        $cnd = [];
+        $cnd['HtmldocNotableWord.data_file_id'] = $dataFile->id;
+        
+        return $this->find('all',[
+            'conditions' => $cnd,
+            'offset' => $offset,
+            'limit' => $limit
+        ]);
+    }
+
 }

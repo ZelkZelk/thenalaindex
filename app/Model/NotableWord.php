@@ -169,4 +169,21 @@ class NotableWord extends AppModel {
         
         return $options;
     }
+    
+    /* Obtiene la valoracion emocional de una palabra por id de palabra */
+    
+    public function getScore($id){
+        if($this->loadFromId($id)){
+            $ev = $this->Data()->read('emotional_value');
+            
+            switch ($ev){
+                case 'positive':
+                    return 1;
+                case 'negative':
+                    return -1;
+            }
+        }
+        
+        return 0;
+    }
 }

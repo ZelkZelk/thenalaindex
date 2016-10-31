@@ -69,8 +69,7 @@ class WordCountShell extends AppShell {
         ));    
     }
     
-    /* Inicia el componente WordCountAnalyzer con sus valores por defecto y los necesarios
-     * para el escaneo de urls y reemplazo de atributos en documentos HTML.
+    /* Inicia el componente WordCountAnalyzer con sus valores por defecto.
      */
     
     private $WordCountAnalyzer;
