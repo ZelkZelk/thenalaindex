@@ -402,4 +402,40 @@ class CrawlerLog extends AppModel {
         
         return false;
     }
+    
+    /**
+     * Obtiene el primer crawler pendiente de analisis Emocional.
+     */
+    
+    public function getEmotionalScorePending(){
+        $log = $this->find('first',[
+            'order' => 'CrawlerLog.id asc',
+            'fields' => [
+                'CrawlerLog.id',
+                'CrawlerLog.starting',
+                'CrawlerLog.ending',
+                'CrawlerLog.http_petitions',
+                'CrawlerLog.css_crawled',
+                'CrawlerLog.img_crawled',
+                'CrawlerLog.js_crawled',
+                'CrawlerLog.html_crawled',
+                'CrawlerLog.root_hash',
+            ],
+            'conditions' => [
+                'CrawlerLog.status' => 'done',
+                'CrawlerLog.root_hash != ' => NULL,
+                'CrawlerLog.word_count_analyzed != ' => NULL,
+                'CrawlerLog.word_emotional_analyzed' => NULL,
+            ],
+        ]);
+        
+        if($log){
+            $alias = $this->alias;
+            $blob = $log[$alias];
+            $this->loadArray($blob);
+            return true;
+        }
+        
+        return false;
+    }
 }
