@@ -70,8 +70,10 @@ var UI = {
         );
     },
     done : function(react){
+        var title = UI.title();
         return (
             <div className="col">
+                {title}
                 {ScoreUI.resolv(react.state.analysis.score)}
             </div>
         );
@@ -87,7 +89,10 @@ var UI = {
         );
     },
     loading : function(react){
+        var title = UI.title();
+        
         return (
+            {title}
             <span>Obteniendo info de análisis...</span>
         );
     },
