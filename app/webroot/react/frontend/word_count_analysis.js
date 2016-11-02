@@ -53,10 +53,12 @@ var UI = {
     },
     loading : function(react){
         var title = UI.title();
-        
+
         return (
-            {title}
-            <span>Obteniendo info de análisis...</span>
+            <div className="col">
+                {title}
+                <span>Obteniendo info de análisis...</span>
+            </div>
         );
     },
 };
