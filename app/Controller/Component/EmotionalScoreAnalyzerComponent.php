@@ -107,8 +107,6 @@ class EmotionalScoreAnalyzerComponent extends CrawlerUtilityComponent{
             $count = count($data);
             $offset += $count;
             
-            echo $count . "\n";
-            
             foreach($data as $metaData){
                 $blob = $metaData[$alias];
                 $this->MetaDataFile->loadArray($blob);
@@ -204,8 +202,6 @@ class EmotionalScoreAnalyzerComponent extends CrawlerUtilityComponent{
                 $quantity = $notable[$alias]['quantity'];
                 $score = (int) $this->NotableWord->getScore($wordId);
                 $ev += $quantity * $score;
-                
-                echo "ev:$ev score:$score\n";
             }
             
         } while($count === $limit);
