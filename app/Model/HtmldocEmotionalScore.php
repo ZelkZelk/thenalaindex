@@ -97,4 +97,27 @@ class HtmldocEmotionalScore extends AppModel {
         
         return false;
     }
+    
+    /**
+     * Obtiene el puntaje de valoracion emocional del documento, devuelve NULL
+     * si aun no se analizo.
+     */
+    
+    public function retrieveAnalysis($data_file_id){
+        $cnd = [];
+        $cnd['HtmldocEmotionalScore.data_file_id'] = $data_file_id;
+        $data = $this->find('first', [
+            'conditions' => $cnd
+        ]);
+        
+        $score = null;
+        
+        if($data){
+            $score = (int) $data['HtmldocEmotionalScore']['score'];
+        }
+        
+        return [
+            'score' => $score
+        ];
+    }
 }

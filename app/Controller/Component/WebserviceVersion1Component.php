@@ -132,10 +132,14 @@ class WebserviceVersion1Component extends Component{
         App::import('Model','HtmldocNotableWord');
         $HtmldocNotableWord = new HtmldocNotableWord();
         
+        App::import('Model','HtmldocEmotionalScore');
+        $HtmldocEmotionalScore = new HtmldocEmotionalScore();
+        
         $output = [
             'link' => $link,
             'analysis' => [
-                'wc' => $HtmldocNotableWord->retrieveAnalysis($data_file_id)
+                'wc' => $HtmldocNotableWord->retrieveAnalysis($data_file_id),
+                'emo' => $HtmldocEmotionalScore->retrieveAnalysis($data_file_id)
             ],
             'target' => $Target->Data()->dump(),
             'meta' => $meta,

@@ -53,7 +53,7 @@ var UI = {
     },
     loading : function(react){
         return (
-            <span></span>
+            <span>Obteniendo info de análisis...</span>
         );
     },
 };
@@ -84,8 +84,14 @@ var WordCountAnalysis = React.createClass({
         });
     },
     done : function(analysis){
+        var state = States.done;
+
+        if(analysis.length === 0){
+            state = States.empty;
+        }
+
         this.setState({
-            state : States.done,
+            state : state,
             analysis : analysis
         });
     },

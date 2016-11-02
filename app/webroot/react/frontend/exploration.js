@@ -5,6 +5,7 @@ var HTMLStats = require('./html_stats.js');
 var Modules = require('./modules.js');
 var HttpClient = require('../components/http_client.js');
 var WordCountAnalysis = require('./word_count_analysis.js');
+var EmotionalAnalysis = require('./emotional_analysis.js');
 
 var UI = {
     get : function(react){
@@ -40,6 +41,12 @@ var UI = {
                             react.analysis.wc = ref;
                         }}
                         analysis={analysis.wc} />
+
+                    <EmotionalAnalysis
+                        ref={function(ref){
+                            react.analysis.emo = ref;
+                        }}
+                        analysis={analysis.emo} />
                 </div>
             </div>
         );
@@ -95,6 +102,7 @@ var Exploration = React.createClass({
         this.urlViewer.loading();
         this.stats.loading();
         this.analysis.wc.loading();
+        this.analysis.emo.loading();
     },
     ajaxOnError : function(module,params){
         var callback = this.swapperCallback.bind(this,module,params);
@@ -110,6 +118,7 @@ var Exploration = React.createClass({
         this.urlViewer.done(url.full_url);
         this.stats.done(meta);
         this.analysis.wc.done(analysis.wc);
+        this.analysis.emo.done(analysis.emo);
     },
     getParams : function(hash){
         return Modules.exploration.params(this.props.target.id,hash,this.props.target.name);
