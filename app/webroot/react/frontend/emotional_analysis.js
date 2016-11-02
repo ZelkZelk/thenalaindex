@@ -34,7 +34,7 @@ var ScoreUI = {
             <span>{message}</span>
         );
     },
-    resolvMessage : function(){
+    resolvMessage : function(score){
         var message = "Sin calificar";
 
         if(score >= Tier.positive_3){
